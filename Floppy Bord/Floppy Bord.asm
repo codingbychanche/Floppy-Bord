@@ -79,11 +79,10 @@ screens	equ 6					;6 komplette Bildschirme sollen gescrollt werden
 
 CONSOL	EQU 53279
 
-; Eigene
-
 ;
 ; Start
 ;
+
 	org $a000
 
 ;
@@ -104,6 +103,9 @@ titelscr
 	sta dlptr	
 	lda #>dltitel
 	sta dlptr+1
+	
+	lda #>chset
+	sta 756
 st
 	lda consol
 	and #1
@@ -116,17 +118,13 @@ st
 begin
 	jsr screeninit				; Game- Screen init
 	jsr showscor				; Punktestand ausgeben
-	
-	lda #255					; Set Color
-	sta colpf0
-	lda #50
-	sta colpf1
-	lda #60
-	sta colpf2
-	lda #11
-	sta colpf3
-	lda #118
-	sta colbak
+
+	lda #<dli   				;Dli an!
+	sta vdlist
+	lda #>dli
+	sta vdlist+1
+	lda #$C0
+	sta NMIEN
 	
 	jsr pminit					; PM Grafik ein
 	jsr showbird
@@ -446,6 +444,64 @@ set
 	rts	
 	
 ;
+; DLI
+;
+
+dli
+	pha								;Register retten
+	txa
+	pha
+	tya
+	pha
+	
+	lda vcount
+	asl
+	cmp #38
+	bcs dli1						;Aktuelle Zeile > 38?
+	
+	lda #>chset						;Nein!=> Wir sind also noch im Anzeigefeld 
+	sta $d409						;für die Punkte
+	lda #10							
+	sta colpf0s						
+	lda #255
+	sta colpf1s
+	lda #116
+	sta colpf2s
+	lda #155
+	sta colpf3s
+	lda #116						;Dunkelblau der Hintergrund
+	sta wsync
+	sta colbaks
+
+dli1								
+	lda vcount						;Aktuelle Zeile < 38?
+	asl								;Wir sind also noch im Anzeigefeld für
+	cmp #38							;die Punkte
+	bcc dlout						;=> nix tun
+							
+							
+	lda #>chset12
+	sta $d409
+	lda #103						;Nein: Wir sind im Spielfeldbereich		
+	sta colpf0s						;=>Spielfeldbereich einfärben.				
+	lda #120
+	sta colpf1s
+	lda #130
+	sta colpf2s
+	lda #140
+	sta colpf3s
+	lda #124						;Helblau der Hintergrund :)
+	sta wsync
+	sta colbaks
+dlout
+	pla								;Register zurückschreiben
+	tay
+	pla
+	tax
+	pla
+	
+	rti
+;
 ; Aktuellen Punktestand ausgeben
 ; 
 ; Aufruf: 
@@ -576,7 +632,7 @@ titel
 	;
 
 dlgame							;Game Screen						
-	.byte $70,$70,$70			;3 x leer.....
+	.byte $70+128,$70			;Leer
 
 	; Jede Zeile hat 40 Bytes= 40 Zeichen
 	; Das Spielfeld besteht aus 6 Bildschirmen
@@ -587,6 +643,7 @@ bytes		equ 239					;Bytes je Zeile
 	.byte $40+gr0,a(ln1)
 	.byte $40+gr1,a(scorelin)		 ;Punkte- Anzeige
 	.byte $40+gr0,a(ln2)
+	.byte $70+128
 	
 z0	.byte $40+gr12,a(screen)		 ;Gamescreen, Zeile 0
 z1	.byte $40+gr12,a(screen+1*bytes) ;Gamescreen, Zeile 1	
@@ -614,7 +671,7 @@ z19	.byte $40+gr12,a(screen+19*bytes)
 	.byte $41,a(dlgame)
 	
 scorelin
-	.byte " SCORE:             "
+	.byte "!SCORE             !"
 	
 	; Rahmen für die Punkteanzeige
 	
@@ -657,13 +714,94 @@ adtab
 	.byte dummy,a(screen+18*bytes)
 	.byte dummy,a(screen+19*bytes)		;Zeile 20
 
-	;
-	; Bildspeicher Spielebildschirm
-	;
+;
+; Bildspeicher Spielebildschirm
+;
 	
 screen								; Game Screen Data						
 	org *+8000
 	
+;
+; Zeichensatz Daten
+;
+; Text, Gr. 0
+;
+
+	 org $2000
+chset
+	.byte $00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+	.byte $00,$66,$66,$66,$00,$00,$00,$00,$00,$66,$FF,$FF,$66,$FF,$66,$00
+	.byte $18,$7E,$7E,$60,$7E,$06,$7E,$18,$00,$66,$6C,$18,$30,$66,$46,$00
+	.byte $3E,$36,$1E,$78,$6F,$7E,$7B,$00,$00,$18,$18,$18,$00,$00,$00,$00
+	.byte $00,$3E,$3E,$38,$38,$38,$3E,$00,$00,$7C,$7C,$1C,$1C,$1C,$7C,$00
+	.byte $00,$66,$3C,$FF,$3C,$66,$00,$00,$00,$18,$18,$7E,$7E,$18,$18,$00
+	.byte $00,$00,$00,$00,$00,$18,$18,$38,$00,$00,$00,$7E,$7E,$00,$00,$00
+	.byte $00,$00,$00,$00,$00,$38,$38,$00,$00,$06,$0E,$1C,$38,$70,$60,$00
+	.byte $00,$7E,$7E,$66,$66,$66,$7E,$00,$00,$38,$38,$18,$18,$7E,$7E,$00
+	.byte $00,$7E,$76,$0C,$38,$70,$7E,$00,$00,$7E,$7E,$0C,$1C,$66,$3C,$00
+	.byte $00,$1C,$3C,$7C,$6E,$7E,$0C,$00,$00,$7E,$7E,$60,$7E,$0E,$7C,$00
+	.byte $00,$7E,$7E,$60,$7E,$66,$7E,$00,$00,$7E,$7E,$0C,$18,$30,$30,$00
+	.byte $00,$7E,$7E,$66,$3C,$66,$7E,$00,$00,$7E,$7E,$66,$7E,$06,$7E,$00
+	.byte $00,$00,$38,$38,$00,$38,$38,$00,$00,$00,$18,$18,$00,$18,$38,$38
+	.byte $06,$0C,$18,$30,$18,$0C,$06,$00,$00,$00,$7E,$00,$00,$7E,$00,$00
+	.byte $60,$30,$18,$0C,$18,$30,$60,$00,$00,$7E,$7E,$06,$1E,$00,$1C,$1C
+	.byte $00,$7E,$7A,$6E,$6E,$60,$7E,$00,$00,$7E,$7E,$66,$66,$7E,$66,$00
+	.byte $00,$7E,$7E,$66,$7C,$66,$7E,$00,$00,$7E,$7E,$66,$60,$66,$7E,$00
+	.byte $00,$7C,$7E,$66,$66,$6C,$78,$00,$00,$7E,$7E,$60,$7E,$60,$7E,$00
+	.byte $00,$7E,$7E,$60,$78,$60,$60,$00,$00,$7E,$7E,$60,$6E,$66,$7E,$00
+	.byte $00,$66,$66,$66,$7E,$7E,$66,$00,$00,$7E,$7E,$18,$18,$18,$7E,$00
+	.byte $00,$1E,$1E,$06,$66,$66,$7E,$00,$00,$66,$66,$6C,$78,$7C,$66,$00
+	.byte $00,$60,$60,$60,$66,$7E,$7E,$00,$00,$63,$77,$77,$7F,$6B,$63,$00
+	.byte $00,$76,$76,$7E,$6E,$66,$66,$00,$00,$7E,$7E,$66,$66,$66,$7E,$00
+	.byte $00,$7E,$7E,$66,$66,$7E,$60,$00,$00,$7E,$7E,$66,$66,$6C,$76,$00
+	.byte $00,$7E,$7E,$66,$64,$7C,$66,$00,$00,$7E,$7E,$60,$7E,$06,$7E,$00
+	.byte $00,$7E,$7E,$18,$18,$18,$18,$00,$00,$66,$66,$66,$66,$7E,$7E,$00
+	.byte $00,$66,$66,$66,$66,$3C,$3C,$00,$00,$63,$63,$6B,$7F,$7F,$77,$00
+	.byte $00,$66,$66,$3C,$3C,$7E,$66,$00,$00,$66,$66,$7E,$7E,$18,$18,$00
+	.byte $00,$7E,$7E,$0C,$38,$60,$7E,$00,$00,$1E,$1E,$18,$18,$18,$1E,$00
+	.byte $00,$40,$60,$30,$18,$0C,$06,$00,$00,$78,$78,$18,$18,$18,$78,$00
+	.byte $00,$08,$1C,$3E,$63,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$00
+	.byte $00,$36,$7F,$7F,$3E,$1C,$08,$00,$18,$18,$18,$1F,$1F,$18,$18,$18
+	.byte $03,$03,$03,$03,$03,$03,$03,$03,$18,$18,$18,$F8,$F8,$00,$00,$00
+	.byte $18,$18,$18,$F8,$F8,$18,$18,$18,$00,$00,$00,$F8,$F8,$18,$18,$18
+	.byte $03,$07,$0E,$1C,$38,$70,$E0,$C0,$C0,$E0,$70,$38,$1C,$0E,$07,$03
+	.byte $01,$03,$07,$0F,$1F,$3F,$7F,$FF,$00,$00,$00,$00,$0F,$0F,$0F,$0F
+	.byte $80,$C0,$E0,$F0,$F8,$FC,$FE,$FF,$0F,$0F,$0F,$0F,$00,$00,$00,$00
+	.byte $F0,$F0,$F0,$F0,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$00,$00
+	.byte $00,$00,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$F0,$F0,$F0,$F0
+	.byte $00,$1C,$1C,$7F,$77,$1C,$3E,$00,$00,$00,$00,$1F,$1F,$18,$18,$18
+	.byte $00,$00,$00,$FF,$FF,$00,$00,$00,$18,$18,$18,$FF,$FF,$18,$18,$18
+	.byte $00,$00,$3C,$7E,$7E,$7E,$3C,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF
+	.byte $C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00,$00,$00,$FF,$FF,$18,$18,$18
+	.byte $18,$18,$18,$FF,$FF,$00,$00,$00,$F0,$F0,$F0,$F0,$F0,$F0,$F0,$F0
+	.byte $18,$18,$18,$1F,$1F,$00,$00,$00,$7C,$7C,$60,$78,$60,$7E,$18,$1E
+	.byte $00,$18,$3C,$7E,$18,$18,$18,$00,$00,$18,$18,$18,$7E,$3C,$18,$00
+	.byte $00,$18,$30,$7E,$30,$18,$00,$00,$00,$18,$0C,$7E,$0C,$18,$00,$00
+	.byte $00,$18,$3C,$7E,$7E,$3C,$18,$00,$00,$00,$7E,$06,$7E,$66,$7E,$00
+	.byte $00,$60,$60,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$7E,$60,$60,$7E,$00
+	.byte $00,$06,$06,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$66,$7E,$60,$7E,$00
+	.byte $00,$1E,$1E,$18,$7E,$18,$18,$00,$00,$00,$7E,$7E,$66,$7E,$06,$7E
+	.byte $00,$60,$60,$7E,$7E,$66,$66,$00,$38,$38,$00,$38,$38,$18,$3C,$00
+	.byte $00,$06,$00,$06,$06,$06,$3E,$3E,$00,$60,$60,$66,$7C,$7C,$66,$00
+	.byte $00,$38,$38,$18,$18,$3C,$3C,$00,$00,$00,$77,$77,$7F,$7F,$6B,$00
+	.byte $00,$00,$7E,$7E,$66,$66,$66,$00,$00,$00,$7E,$7E,$66,$66,$7E,$00
+	.byte $00,$00,$7E,$7E,$66,$7E,$60,$60,$00,$00,$7E,$7E,$66,$7E,$06,$06
+	.byte $00,$00,$7E,$7E,$60,$60,$60,$00,$00,$00,$7E,$60,$7E,$06,$7E,$00
+	.byte $00,$18,$7E,$7E,$18,$18,$1E,$00,$00,$00,$66,$66,$66,$7E,$7E,$00
+	.byte $00,$00,$66,$66,$7E,$3C,$18,$00,$00,$00,$63,$6B,$7F,$7F,$77,$00
+	.byte $00,$00,$66,$7E,$3C,$7E,$66,$00,$00,$00,$66,$66,$7E,$7E,$0E,$7E
+	.byte $00,$00,$7E,$7E,$18,$30,$7E,$00,$00,$18,$3C,$7E,$7E,$18,$3C,$00
+	.byte $18,$18,$18,$18,$18,$18,$18,$18,$00,$7E,$78,$7C,$6E,$67,$03,$00
+	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$54,$54,$54,$54,$54,$54,$00
+	
+;
+; Zeichensatz, Spielfed Gr.12/13
+;
+
+	org $4000
+chset12
+:8	.byte 0
+:1000 .byte $FF
 
 
 
