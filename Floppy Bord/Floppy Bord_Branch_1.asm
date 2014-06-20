@@ -4,6 +4,8 @@
 ;
 ; BF 16.6.2014
 ;
+; Versuch: Das Scrolling sollte nun im VBI ablaufen....
+;
 
 ; ANTIC
 
@@ -128,8 +130,36 @@ begin
 	
 	jsr pminit					; PM Grafik ein
 	jsr showbird
-	jmp scroll					;endlos......
+	
+	;
+	; Scroll- Routine init
+	;
 
+	lda #4
+	sta clocks
+	
+	lda #0
+	sta col
+
+	ldy #<scroll
+	ldx #>scroll
+	lda #7
+	jsr $e45c
+	
+e	lda $14
+	sta colpm0
+	
+	lda col
+	cmp #190
+	bne gg
+	
+	lda #100
+	sta delta
+	jsr score
+	jsr screeninit
+	
+gg	jmp e						;Endlos
+	
 ;
 ; Main- Loop: Do Scroll
 ;
@@ -141,6 +171,9 @@ begin
 
 lines	
 	.byte 0					;Ablage für Anzahl der Zeilen, die gescrollt werden
+col
+	.byte 0					;Anzahl der Zeichen um die der Bildschirm nach rechts gescrollt werden soll
+	
 clocks
 	.byte 0					;Finescroll
 
@@ -154,19 +187,19 @@ scroll
 	; Softsroll
 	;
 
-	ldx #190				;6 (Anzahl Spielebildschimrme) x Bytes je Zeile(eines Spielebildschirms)
-s00
-	lda #4					;4 Color- Clocks
-	sta clocks
 fs	
-	lda clocks				;4,3,2,1 und so fort in das Feinscroll-
-	sta $d404				;register schreiben, das berschiebt jede Zeile
-	jsr wait				;in der das Finescroll- Bit in der Display-List
-	dec clocks				;gesetzt ist jew. ein Color- Clock nach rechts
-	bne fs
-	
-	lda #4					;Feinscroll- Register zurücksetzen
+	lda clocks				;Wenn 0 dann ist das Finescrollen beendet => 
 	sta $d404
+	dec clocks
+	beq s00					;Reset Feinscroll- Register und 1 x Hardscroll
+										
+	jmp $e462				;VBI verlassen
+	
+s00
+	lda #4					;Reset Finescroll- Register=> 4 Color- Clocks
+	sta clocks				;Wird schrittweise zurückgezählt: 4,3,2 usw. => Veschiebung nach rechts
+	sta $d404
+
 s0	
 	lda #maxlin				;Anzahl der Zeilen, die wir horizontal
 	sta lines				;verschieben wollen
@@ -190,19 +223,22 @@ s1
 	iny						;verbiegen
 	dec lines				;Alle Zeilen durch?		
 	bne s1					;Nein!
-
-	dex						;Bildschirm um die gewünschte Anzahl Zeichen nach links gescrollt?
-	bne s00					;Nein!
-
-	jsr screeninit			;Ja! Spielfeld neu initialisieren
 	
-	lda #100				;Mehr Punkte
-	sta delta
-	jsr score
-	jsr showscor
+	dec col
+	lda col
+	cmp #0
+	beq e1
+	jmp e2
 
-	jmp scroll				;Endlos
-
+e1	lda #190
+	sta col
+	
+	ldy #<e2
+	ldx #>e2
+	lda #7
+	jsr $e45c
+	
+e2	jmp $e462				;VBI verlassen
 
 ;
 ; Spielfigur anzeigen
@@ -361,7 +397,7 @@ ll1
 	;
 
 	ldy #0				
-	ldx #100
+	ldx #190
 	lda #4
 zz1								;Zeile am oberen Bildrand zeichnen
 	dex
@@ -370,7 +406,7 @@ zz1								;Zeile am oberen Bildrand zeichnen
 	bne zz1
 	
 	ldy #19
-	ldx #100
+	ldx #190
 	lda #5
 zz2								;Zeile am unteren Bildrand zeichnen
 	dex

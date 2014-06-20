@@ -2,7 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 16.6.2014
+; BF 20.6.2014
 ;
 
 ; ANTIC
@@ -68,6 +68,7 @@ GRACTL	EQU $D01D ;PM CONTROLREG
 
 ZP		equ $e0
 zp2		equ $e2
+zp3		equ $e4
 
 ; Parameter
 
@@ -84,15 +85,6 @@ CONSOL	EQU 53279
 ;
 
 	org $a000
-
-;
-; Init Vars's
-;
-
-	lda #50
-	sta yp
-	lda #150
-	sta xp
 	
 ;
 ; Display Titel
@@ -126,10 +118,27 @@ begin
 	lda #$C0
 	sta NMIEN
 	
+	lda #<dlgame				; Display-List für den Spielebildschirm an				
+	sta dlptr						
+	lda #>dlgame
+	sta dlptr+1
+	
 	jsr pminit					; PM Grafik ein
-	jsr showbird
-	jmp scroll					;endlos......
-
+	ldy #<movebird				; Bewegeroutine des Vogels
+	ldx #>movebird				; läuft im VBI ab
+	lda #7
+	jsr $e45c
+	
+main
+	jsr scroll					;Scrollen
+	
+	jsr screeninit				;Spielfeld neu initialisieren
+	lda #100					;Mehr Punkte
+	sta delta
+	jsr score
+	jsr showscor
+	
+	jmp main
 ;
 ; Main- Loop: Do Scroll
 ;
@@ -194,43 +203,8 @@ s1
 	dex						;Bildschirm um die gewünschte Anzahl Zeichen nach links gescrollt?
 	bne s00					;Nein!
 
-	jsr screeninit			;Ja! Spielfeld neu initialisieren
-	
-	lda #100				;Mehr Punkte
-	sta delta
-	jsr score
-	jsr showscor
+	rts			
 
-	jmp scroll				;Endlos
-
-
-;
-; Spielfigur anzeigen
-;
-bird
-	.byte 0,0,124,66,183,231,210,146,12
-
-xp	.byte 0
-yp	.byte 0
-
-
-showbird
-	lda #<(pmadr+512)	
-	sta zp
-	lda #>(pmadr+512)
-	sta zp+1
-	
-	ldy yp
-	ldx #8
-l1	lda  bird,x
-	sta (zp),y
-	iny
-	dex
-	bne l1
-	
-	lda #100
-	sta hposp0
-	rts
 ;
 ; PM- Grafik initialisieren
 ;
@@ -266,6 +240,69 @@ pminit
 	rts					
 
 ;
+; Movebird
+;
+
+bird
+	.byte 0,0,124,66,183,231,210,146,12,0
+ypos	
+	.byte 30
+	
+xrr	.byte 0
+yrr	.byte 0
+
+waitc
+	.byte 5
+
+movebird
+
+	stx xrr								;Register sichern
+	sty yrr
+	
+	lda #<(pmadr+512)					;Player einlesen
+	sta zp3
+	lda #>(pmadr+512)
+	sta zp3+1
+	ldy ypos
+	ldx #9
+l12	lda bird,x
+	sta (zp3),y
+	iny
+	dex
+	bne l12
+	
+	lda #100
+	sta hposp0
+	
+	dec waitc							;Warte Schleife
+	bne eee								;<>0? => ja! => nix tun
+	
+	lda #5								;=0 => Player nach unten bewegen		
+	sta waitc
+	
+	lda 644								;Feuerknopf abfragen
+	bne down							;Nicht gedrückt? Dann Vogel nach unten bewegen
+	
+	lda ypos							;Feuerknopf gedrückt, dann prüfen ob
+	cmp #30								;maximale Höhe erreicht
+	beq eee								;Ist das der Fall, dann nix tun
+	dec ypos							;Knopf gedrückt, Vogel nach oben
+	jmp eee								;und nix tun
+	
+down	
+	inc ypos							;Vogel nach unten bewegen
+	lda ypos
+	cmp #100							;Wenn der Vogel bis zu dieser Position
+	bne eee								;gesunken ist GAME OVER!
+	lda #30								
+	sta ypos
+eee		
+	ldx xrr								;Register zurück
+	ldy yrr		
+	
+	jmp $e462							;VBI verlassen
+
+;
 ; Game- Screen initialisiern
 ;
 ; Prinzip:
@@ -295,6 +332,7 @@ zeile
 	.byte 0
 	
 screeninit	
+
 	;
 	; Zeiger auf das Bild- Ram des Spielebildschirms, in der 
 	; Display- List für den Spielebildschirm zurücksetzen.
@@ -310,7 +348,7 @@ screeninit
 	lda #>(z0+1)					;bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #20							;20 Zeilen
+	ldx #19							;20 Zeilen
 	ldy #0
 lll0
 	lda (zp2),y						;low- Byte
@@ -361,21 +399,21 @@ ll1
 	;
 
 	ldy #0				
-	ldx #100
+	ldx #195
 	lda #4
 zz1								;Zeile am oberen Bildrand zeichnen
 	dex
 	jsr plot
-	cpx #50
+	cpx #45
 	bne zz1
 	
 	ldy #19
-	ldx #100
+	ldx #195
 	lda #5
 zz2								;Zeile am unteren Bildrand zeichnen
 	dex
 	jsr plot
-	cpx #50
+	cpx #45
 	bne zz2
 	
 	ldx	#50
@@ -383,17 +421,32 @@ zz2								;Zeile am unteren Bildrand zeichnen
 	lda #"1"
 	jsr plot
 	
+	ldy #10
+zz31
+	ldx #100
+	lda #2
+zz3
+	jsr plot
+	dex
+	cpx #90
+	bne zz3
+	dey
+	bne zz31
+	
+	ldy #10
+zz311
+	ldx #150
+	lda #2
+zz33
+	jsr plot
+	dex
+	cpx #130
+	bne zz33
+	iny
+	cpy #19
+	bne zz311
+	
 	jsr showscor				;Punktestand zeigen
-
-	;
-	; Display-List für den Spielebildschirm 
-	; einschalten
-	;
-
-	lda #<dlgame					
-	sta dlptr						
-	lda #>dlgame
-	sta dlptr+1
 
 	rts
 
@@ -589,7 +642,7 @@ wait
 	stx xr						;Save register
 	sty yr
 
-	ldx #100
+	ldx #140
 w0
 	ldy #50
 w1
