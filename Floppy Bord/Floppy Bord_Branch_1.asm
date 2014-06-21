@@ -2,9 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 16.6.2014
-;
-; Versuch: Das Scrolling sollte nun im VBI ablaufen....
+; BF 20.6.2014
 ;
 
 ; ANTIC
@@ -70,6 +68,7 @@ GRACTL	EQU $D01D ;PM CONTROLREG
 
 ZP		equ $e0
 zp2		equ $e2
+zp3		equ $e4
 
 ; Parameter
 
@@ -86,15 +85,6 @@ CONSOL	EQU 53279
 ;
 
 	org $a000
-
-;
-; Init Vars's
-;
-
-	lda #50
-	sta yp
-	lda #150
-	sta xp
 	
 ;
 ; Display Titel
@@ -128,38 +118,30 @@ begin
 	lda #$C0
 	sta NMIEN
 	
+	lda #<dlgame				; Display-List für den Spielebildschirm an				
+	sta dlptr						
+	lda #>dlgame
+	sta dlptr+1
+	
 	jsr pminit					; PM Grafik ein
-	jsr showbird
-	
-	;
-	; Scroll- Routine init
-	;
 
-	lda #4
-	sta clocks
-	
-	lda #0
-	sta col
-
-	ldy #<scroll
-	ldx #>scroll
+	ldy #<movebird				; Bewegeroutine des Vogels im Deffered VBI
+	ldx #>movebird				
 	lda #7
 	jsr $e45c
 	
-e	lda $14
-	sta colpm0
+	lda #1						;Verzügerung für Scroll- Routine
+	sta wait
+	lda #3						;Color Clocks für Finescroll
+	sta clocks
 	
-	lda col
-	cmp #190
-	bne gg
+	ldy #<scroll				;Scroll Routine im Immediate VBI
+	ldx #>scroll
+	lda #6
+	jsr $e45c
 	
-	lda #100
-	sta delta
-	jsr score
-	jsr screeninit
-	
-gg	jmp e						;Endlos
-	
+main
+	jmp main
 ;
 ; Main- Loop: Do Scroll
 ;
@@ -171,46 +153,37 @@ gg	jmp e						;Endlos
 
 lines	
 	.byte 0					;Ablage für Anzahl der Zeilen, die gescrollt werden
-col
-	.byte 0					;Anzahl der Zeichen um die der Bildschirm nach rechts gescrollt werden soll
-	
 clocks
 	.byte 0					;Finescroll
 
 scroll
+	dec wait				;wait gibt an wie oft scroll aufgerufen werden
+	beq s11					;muss, damit einmal gescrollt werden wird
+	jmp $e462				;wait <>0=> zurück, nicht scrollen!
+s11
+	lda #1					;wait zurücksetzen
+	sta wait	
+	lda clocks				;Feinscroll?
+	beq hard				;Nein! => Hardscroll
+	dec clocks				;Feinscroll	
+	lda clocks
+	sta $d404						
+	jmp $e45f				;VBI verlassen
+hard	
+	lda #3					;Finescroll Register zurücksetzen					
+	sta $d404
+	sta clocks
+	
+	lda #19					;Anzahl der zu scrollenden Zeilen
+	sta lines
+	
 	lda #<(z0+1)			;Adresse für den Inhalt der Zeile 0
 	sta zp					;in die Zeropage schreiben
 	lda #>(z0+1)
 	sta zp+1
-		
-	;
-	; Softsroll
-	;
-
-fs	
-	lda clocks				;Wenn 0 dann ist das Finescrollen beendet => 
-	sta $d404
-	dec clocks
-	beq s00					;Reset Feinscroll- Register und 1 x Hardscroll
-										
-	jmp $e462				;VBI verlassen
 	
-s00
-	lda #4					;Reset Finescroll- Register=> 4 Color- Clocks
-	sta clocks				;Wird schrittweise zurückgezählt: 4,3,2 usw. => Veschiebung nach rechts
-	sta $d404
-
-s0	
-	lda #maxlin				;Anzahl der Zeilen, die wir horizontal
-	sta lines				;verschieben wollen
-	ldy #0					;Offset auf "zp" (Zeiger auf die Adresse der aktuellen Zeile)
-
-	;
-	; Hardscroll
-	;
-	; Spielebildschirm um ein Byte nach links schieben
-	;
-s1
+	ldy #0
+s1	
 	clc					
 	lda (zp),y				;Hole Zeilenadresse (Low)
 	adc #1					;Eins dazu
@@ -223,50 +196,9 @@ s1
 	iny						;verbiegen
 	dec lines				;Alle Zeilen durch?		
 	bne s1					;Nein!
-	
-	dec col
-	lda col
-	cmp #0
-	beq e1
-	jmp e2
 
-e1	lda #190
-	sta col
-	
-	ldy #<e2
-	ldx #>e2
-	lda #7
-	jsr $e45c
-	
-e2	jmp $e462				;VBI verlassen
+	jmp $e45f
 
-;
-; Spielfigur anzeigen
-;
-bird
-	.byte 0,0,124,66,183,231,210,146,12
-
-xp	.byte 0
-yp	.byte 0
-
-
-showbird
-	lda #<(pmadr+512)	
-	sta zp
-	lda #>(pmadr+512)
-	sta zp+1
-	
-	ldy yp
-	ldx #8
-l1	lda  bird,x
-	sta (zp),y
-	iny
-	dex
-	bne l1
-	
-	lda #100
-	sta hposp0
-	rts
 ;
 ; PM- Grafik initialisieren
 ;
@@ -302,6 +234,69 @@ pminit
 	rts					
 
 ;
+; Movebird
+;
+
+bird
+	.byte 0,0,124,66,183,231,210,146,12,0
+ypos	
+	.byte 30
+	
+xrr	.byte 0
+yrr	.byte 0
+
+waitc
+	.byte 1
+
+movebird
+
+	stx xrr								;Register sichern
+	sty yrr
+	
+	lda #<(pmadr+512)					;Player einlesen
+	sta zp3
+	lda #>(pmadr+512)
+	sta zp3+1
+	ldy ypos
+	ldx #9
+l12	lda bird,x
+	sta (zp3),y
+	iny
+	dex
+	bne l12
+	
+	lda #100
+	sta hposp0
+	
+	dec waitc							;Warte Schleife
+	bne eee								;<>0? => ja! => nix tun
+	
+	lda #1								;=0 => Player nach unten bewegen		
+	sta waitc
+	
+	lda 644								;Feuerknopf abfragen
+	bne down							;Nicht gedrückt? Dann Vogel nach unten bewegen
+	
+	lda ypos							;Feuerknopf gedrückt, dann prüfen ob
+	cmp #30								;maximale Höhe erreicht
+	beq eee								;Ist das der Fall, dann nix tun
+	dec ypos							;Knopf gedrückt, Vogel nach oben
+	jmp eee								;und nix tun
+	
+down	
+	inc ypos							;Vogel nach unten bewegen
+	lda ypos
+	cmp #100							;Wenn der Vogel bis zu dieser Position
+	bne eee								;gesunken ist GAME OVER!
+	lda #30								
+	sta ypos
+eee		
+	ldx xrr								;Register zurück
+	ldy yrr		
+	
+	jmp $e462							;VBI verlassen
+
+;
 ; Game- Screen initialisiern
 ;
 ; Prinzip:
@@ -331,6 +326,7 @@ zeile
 	.byte 0
 	
 screeninit	
+
 	;
 	; Zeiger auf das Bild- Ram des Spielebildschirms, in der 
 	; Display- List für den Spielebildschirm zurücksetzen.
@@ -346,7 +342,7 @@ screeninit
 	lda #>(z0+1)					;bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #20							;20 Zeilen
+	ldx #19							;20 Zeilen
 	ldy #0
 lll0
 	lda (zp2),y						;low- Byte
@@ -397,21 +393,21 @@ ll1
 	;
 
 	ldy #0				
-	ldx #190
+	ldx #195
 	lda #4
 zz1								;Zeile am oberen Bildrand zeichnen
 	dex
 	jsr plot
-	cpx #50
+	cpx #45
 	bne zz1
 	
 	ldy #19
-	ldx #190
+	ldx #195
 	lda #5
 zz2								;Zeile am unteren Bildrand zeichnen
 	dex
 	jsr plot
-	cpx #50
+	cpx #45
 	bne zz2
 	
 	ldx	#50
@@ -419,17 +415,32 @@ zz2								;Zeile am unteren Bildrand zeichnen
 	lda #"1"
 	jsr plot
 	
+	ldy #10
+zz31
+	ldx #100
+	lda #2
+zz3
+	jsr plot
+	dex
+	cpx #90
+	bne zz3
+	dey
+	bne zz31
+	
+	ldy #10
+zz311
+	ldx #150
+	lda #2
+zz33
+	jsr plot
+	dex
+	cpx #130
+	bne zz33
+	iny
+	cpy #19
+	bne zz311
+	
 	jsr showscor				;Punktestand zeigen
-
-	;
-	; Display-List für den Spielebildschirm 
-	; einschalten
-	;
-
-	lda #<dlgame					
-	sta dlptr						
-	lda #>dlgame
-	sta dlptr+1
 
 	rts
 
@@ -625,7 +636,7 @@ wait
 	stx xr						;Save register
 	sty yr
 
-	ldx #100
+	ldx #50
 w0
 	ldy #50
 w1

@@ -174,7 +174,7 @@ fs
 	dec clocks				;gesetzt ist jew. ein Color- Clock nach rechts
 	bne fs
 	
-	lda #4					;Feinscroll- Register zurücksetzen
+	lda #3					;Feinscroll- Register zurücksetzen
 	sta $d404
 s0	
 	lda #maxlin				;Anzahl der Zeilen, die wir horizontal
@@ -252,7 +252,7 @@ xrr	.byte 0
 yrr	.byte 0
 
 waitc
-	.byte 5
+	.byte 1
 
 movebird
 
@@ -277,7 +277,7 @@ l12	lda bird,x
 	dec waitc							;Warte Schleife
 	bne eee								;<>0? => ja! => nix tun
 	
-	lda #5								;=0 => Player nach unten bewegen		
+	lda #1								;=0 => Player nach unten bewegen		
 	sta waitc
 	
 	lda 644								;Feuerknopf abfragen
@@ -642,7 +642,7 @@ wait
 	stx xr						;Save register
 	sty yr
 
-	ldx #140
+	ldx #50
 w0
 	ldy #50
 w1
