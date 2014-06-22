@@ -2,7 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 21.6.2014
+; BF 22.6.2014
 ;
 
 ; ANTIC
@@ -70,6 +70,7 @@ ZP		equ $e0
 zp2		equ $e2
 zp3		equ $e4
 zp4		equ $e6
+zp5		equ	$e8
 
 ; Parameter
 
@@ -89,21 +90,26 @@ CONSOL	EQU 53279
 	jmp titelscr
 kill
 	.byte 0
+wait
+	.byte 0
 	
 ;
 ; Display Titel
 ;
 
 titelscr
-	lda #<dltitel
+
+	jsr clpm					; Clear player 0 
+	
+	lda #<dltitel				; Show titel screen
 	sta dlptr	
 	lda #>dltitel
 	sta dlptr+1
 	
-	lda #>chset
+	lda #>chset					; Activate char set for graphics 0,1,2
 	sta 756
 st
-	lda consol
+	lda consol					; Now wait until the start key is pressed
 	and #1
 	beq begin
 	jmp st	
@@ -112,38 +118,46 @@ st
 ;
 
 begin
-	jsr screeninit				; Game- Screen init
-	jsr clscor					; Punkte löschen
-	jsr showscor				; Punktestand ausgeben
+	jsr screeninit				; Game- screen init (draw playfield, init antic- program)
+	jsr clscor					; Clear old score
+	jsr showscor				; Show score
 
-	lda #0						; Der Vogel lebt!
+	lda #0						; Bird is alive!
 	sta kill
 	
-	lda #30						;Ypos des Vogels init
+	lda #30						; Bird will apear at line 30 on the screen
 	sta ypos
 
-	lda #<dli   				;Dli an!
+	lda #<dli   				; Display- List- Interrupt on
 	sta vdlist
 	lda #>dli
 	sta vdlist+1
 	lda #$C0
 	sta NMIEN
 	
-	lda #<dlgame				; Display-List für den Spielebildschirm an				
+	lda #<dlgame				; Show playfield		
 	sta dlptr						
 	lda #>dlgame
 	sta dlptr+1
 	
-	jsr pminit					; PM Grafik ein
+	lda #<message				; Show message below score, just for fun
+	sta msg+1
+	lda #>message
+	sta msg+2
+	
+	jsr pminit					; Init sprites
+wt
+	lda 644						; Wait for trigger
+	bne wt
 
-	ldy #<movebird				; Bewegeroutine des Vogels im Deffered VBI
+	ldy #<movebird				; Activate deffered VBI for player (bird) movement
 	ldx #>movebird				
 	lda #7
 	jsr $e45c
 	
-	lda #1						;Verzögerung für Scroll- Routine
+	lda #1						; Delay for scrolling
 	sta wait
-	lda #3						;Color Clocks für Finescroll
+	lda #3						; Color clocks for fine scroll
 	sta clocks
 	lda #240					;40 x 6 =240 Bytes = 6 Bildschimre 
 	sta blocks   				;werden gescrollt, danach alles von Vorne :-)
@@ -181,6 +195,11 @@ main
 	lda #7
 	jsr $e45c
 gover	
+	lda #<m1					; Inform the player that he has just died
+	sta msg+1					; (in case he won't belive)
+	lda #>m1
+	sta msg+2
+	
 	lda 644						;Warte auf Feuerknopf
 	bne gover
 	jmp titelscr				;Alles von vorne	
@@ -337,8 +356,19 @@ pminit
 ; Movebird => Deffered VBI
 ;
 
+aniphase
+	.byte 0								; Frame counter for our bird
+fcount
+	.byte 0
+			
+	;
+	; Frames for our bird
+	;
+
 bird
-	.byte 0,0,124,66,183,231,210,146,12,0
+	.byte $00,$00,$7c,$42,$b7,$e7,$d2,$92,$0c,$00
+	.byte $00,$00,$7c,$42,$b7,$e7,$d2,$12,$0c,$00
+	.byte $00,$00,$7c,$42,$b7,$e7,$12,$12,$0c,$00
 ypos	
 	.byte 30
 	
@@ -357,13 +387,23 @@ movebird
 	sta zp4
 	lda #>(pmadr+512)
 	sta zp4+1
+
+	lda #3		
+	sta aniphase
+	ldx #30
+l122	
 	ldy ypos
-	ldx #9
-l12	lda bird,x
+	lda #10
+	sta fcount
+l12	
+	lda bird,x
 	sta (zp4),y
 	iny
 	dex
+	dec fcount
 	bne l12
+	dec aniphase
+	bne l122
 	
 	lda #100
 	sta hposp0
@@ -395,6 +435,23 @@ eee
 	ldy yrr		
 	
 	jmp $e462							;VBI verlassen
+
+;
+; Clear PM- Graphics
+;
+
+clpm
+	lda #<(pmadr+512)					
+	sta zp4
+	lda #>(pmadr+512)
+	sta zp4+1
+	ldy #255
+cl1
+	lda #0
+	sta (zp4),y
+	dey
+	bne cl1
+	rts
 
 ;
 ; Game- Screen initialisiern
@@ -491,6 +548,15 @@ ll1
 	;
 	; Zeichen in Bildschirm 2 bis 5 ablegen
 	;
+
+	ldx #240
+	ldy #19
+	lda #2+127
+lp1
+	jsr plot
+	dex
+	bne lp1
+	
 	
 	ldy #10
 zz31
@@ -516,8 +582,6 @@ zz33
 	iny
 	cpy #19
 	bne zz311
-	
-	jsr showscor				;Punktestand zeigen
 
 	rts
 
@@ -603,8 +667,7 @@ dli1
 	asl								;Wir sind also noch im Anzeigefeld für
 	cmp #38							;die Punkte
 	bcc dlout						;=> nix tun
-							
-							
+												
 	lda #>chset12					;Nein: Wir sind im Spielfeldbereich	
 	sta $d409						;=>Spielfeldbereich einfärben.
 	lda #103						; Für Bit Kombi: 01
@@ -714,35 +777,6 @@ cl
 	bne cl
 	rts
 
-; 
-; Wait
-;
-; Eine simple Warteschleife
-;
-
-xrrr	
-	.byte 0
-yrrr	
-	.byte 0
-
-wait
-	stx xrrr					;Save register
-	sty yrrr
-
-	ldx #50
-w0
-	ldy #50
-w1
-	dey
-	bne w1	
-	dex
-	bne w0
-	
-	ldx xrrr					;Register zurück
-	ldy yrrr
-
-	rts
-
 ;
 ; Game Screen/ Titel usw.
 ;
@@ -769,19 +803,24 @@ titel
 	;
 	; Display- List für den Spielebildschirm
 	;
+	org $1000
 
 dlgame							;Game Screen						
-	.byte $70+128,$70			;Leer
+	.byte $70+128				;Leer
 
 	; Jede Zeile hat 40 Bytes= 40 Zeichen
 	; Das Spielfeld besteht aus 6 Bildschirmen
 	; Damit ist jede Zeile 6 x 40 = 240 Bytes lang
 
-bytes		equ 239					;Bytes je Zeile
+bytes	equ 239							;Bytes je Zeile
 
 	.byte $40+gr0,a(ln1)
-	.byte $40+gr1,a(scorelin)		 ;Punkte- Anzeige
+	.byte $40+gr1,a(scorelin)		;Punkte- Anzeige
+msg
+	.byte $40+gr1,a(message)		; Message line, tell the player what's going on
+
 	.byte $40+gr0,a(ln2)
+	
 	.byte $70+128
 	
 z0	.byte $40+gr12,a(screen)		 ;Gamescreen, Zeile 0
@@ -805,12 +844,16 @@ z17	.byte $40+gr12,a(screen+17*bytes)
 z18	.byte $40+gr12,a(screen+18*bytes)
 z19	.byte $40+gr12,a(screen+19*bytes)
 
-	; Ende, Sprung zum Angang der Display-List
+	; Ende, Sprung zum AnFang der Display-List
 
 	.byte $41,a(dlgame)
 	
 scorelin
 	.byte $02,"score             !"
+message
+	.byte $02,"FLY LITTLE BIRD.. !"
+m1
+	.byte $02,"    GAME OVER     !"
 	
 	; Rahmen für die Punkteanzeige
 	
@@ -852,13 +895,6 @@ adtab
 	.byte dummy,a(screen+17*bytes)
 	.byte dummy,a(screen+18*bytes)
 	.byte dummy,a(screen+19*bytes)		;Zeile 20
-
-;
-; Bildspeicher Spielebildschirm
-;
-	
-screen								; Game Screen Data						
-	org *+8000
 	
 ;
 ; Zeichensatz Daten
@@ -942,6 +978,13 @@ chset
 chset12
 :8	.byte 0
 :1000 .byte $FF
+
+;
+; Bildspeicher Spielebildschirm
+;
+	
+screen								; Game Screen Data						
+	org *+8000
 
 
 
