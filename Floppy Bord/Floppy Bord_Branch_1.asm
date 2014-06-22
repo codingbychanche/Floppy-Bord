@@ -2,7 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 20.6.2014
+; BF 21.6.2014
 ;
 
 ; ANTIC
@@ -69,6 +69,7 @@ GRACTL	EQU $D01D ;PM CONTROLREG
 ZP		equ $e0
 zp2		equ $e2
 zp3		equ $e4
+zp4		equ $e6
 
 ; Parameter
 
@@ -85,6 +86,9 @@ CONSOL	EQU 53279
 ;
 
 	org $a000
+	jmp titelscr
+kill
+	.byte 0
 	
 ;
 ; Display Titel
@@ -109,7 +113,14 @@ st
 
 begin
 	jsr screeninit				; Game- Screen init
+	jsr clscor					; Punkte löschen
 	jsr showscor				; Punktestand ausgeben
+
+	lda #0						; Der Vogel lebt!
+	sta kill
+	
+	lda #30						;Ypos des Vogels init
+	sta ypos
 
 	lda #<dli   				;Dli an!
 	sta vdlist
@@ -130,20 +141,63 @@ begin
 	lda #7
 	jsr $e45c
 	
-	lda #1						;Verzügerung für Scroll- Routine
+	lda #1						;Verzögerung für Scroll- Routine
 	sta wait
 	lda #3						;Color Clocks für Finescroll
 	sta clocks
+	lda #240					;40 x 6 =240 Bytes = 6 Bildschimre 
+	sta blocks   				;werden gescrollt, danach alles von Vorne :-)
 	
 	ldy #<scroll				;Scroll Routine im Immediate VBI
 	ldx #>scroll
 	lda #6
+	jsr $e45c	
+	
+;
+; Main Loop
+;
+
+main							
+	lda #1						;Endlos
+	sta delta					;Punkte anzeigen
+	jsr score
+	jsr showscor
+
+	lda kill					;Lebt der Vogel noch?
+	cmp #1
+	bne notdeath				;ja!
+
+	;
+	; Totes- Routine!
+	;
+	
+	ldy #<vbi_imm_off			;Nein!
+	ldx #>vbi_imm_off			;VBI für Scroll- und Vogelbewegung
+	lda #6						;stoppen => ins leere zeigen lassen
 	jsr $e45c
 	
-main
-	jmp main
+	ldy #<vbi_deff_off
+	ldx #>vbi_deff_off
+	lda #7
+	jsr $e45c
+gover	
+	lda 644						;Warte auf Feuerknopf
+	bne gover
+	jmp titelscr				;Alles von vorne	
+	
+notdeath						
+	jmp main					; Vogel lebt, also alles wiederholen
+	
 ;
-; Main- Loop: Do Scroll
+; Leere VBI- Routinen
+;
+
+vbi_imm_off
+	jmp $e45f
+vbi_deff_off
+	jmp $e462
+;
+; Do Scroll => Immidiate VBI
 ;
 ; Es kann eine (nahezu) beliebige Anzahl Zeilen, horizontal, verschoben werden
 ; Da der Offset auf die Zeilenadressen in der Display List - das Y- Register - 
@@ -153,21 +207,33 @@ main
 
 lines	
 	.byte 0					;Ablage für Anzahl der Zeilen, die gescrollt werden
+blocks
+	.byte 0					;Ablage für die Anzahl der Bildschirme die gescrollt werden
 clocks
-	.byte 0					;Finescroll
+	.byte 0					;Finescroll, Anzahl der Color Clocks um die geschoben werden soll
+
+xr	.byte 0					;Sicherer Platz für Register
+yr	.byte 0
 
 scroll
+	stx xr					;Register sichern
+	sty yr
+
 	dec wait				;wait gibt an wie oft scroll aufgerufen werden
 	beq s11					;muss, damit einmal gescrollt werden wird
-	jmp $e462				;wait <>0=> zurück, nicht scrollen!
+	ldx xr					;wait <>0=> zurück, nicht scrollen!
+	ldy yr					;Register zurück schreiben
+	jmp $e462				;VBI verlassen
 s11
 	lda #1					;wait zurücksetzen
 	sta wait	
 	lda clocks				;Feinscroll?
 	beq hard				;Nein! => Hardscroll
 	dec clocks				;Feinscroll	
-	lda clocks
-	sta $d404						
+	lda clocks				;clocks=3,2,1,0 => beim Herunterzählen werden die Zeichen 		
+	sta $d404				;nach links verschoben, pixelweise
+	ldx xr					;Register zurück schreiben
+	ldy yr					
 	jmp $e45f				;VBI verlassen
 hard	
 	lda #3					;Finescroll Register zurücksetzen					
@@ -196,8 +262,42 @@ s1
 	iny						;verbiegen
 	dec lines				;Alle Zeilen durch?		
 	bne s1					;Nein!
+	dec blocks				;Alle Bildschirme durch?
+	bne out					;nein!
+	
+	;
+	; Scrollbereich zurücksetzen auf Anfang
+	; Analog zur Routine in "Screeninit"
+	
+	lda #240				;ja!
+	sta blocks				;Anzahl der zu scrollenden Bildschirme zurücksetzen
+	
+	lda #<(adtab+1)			;Zeiger auf Adresstabelle		
+	sta zp2					;welche die Startadressen des Spielbildschirms
+	lda #>(adtab+1)			;enthält in zp- Register 2
+	sta zp2+1
+	
+	lda #<(z0+1)			;Zeiger auf Bildadresse in Zeile 0		
+	sta zp					;der Display- List des Spiele-
+	lda #>(z0+1)			;bildschirms in zp- Register 1
+	sta zp+1
 
-	jmp $e45f
+	ldx #19					;20 Zeilen
+	ldy #0
+lll01
+	lda (zp2),y				;low- Byte
+	sta (zp),y
+	iny
+	lda (zp2),y				;High- Byte
+	sta (zp),y
+	iny
+	iny
+	dex
+	bne lll01				;Alle Adressen? => Wenn ja, VBI verlassen	
+out	
+	ldx xr					;Register zurück schreiben
+	ldy yr					
+	jmp $e45f				;VBI verlassen
 
 ;
 ; PM- Grafik initialisieren
@@ -234,7 +334,7 @@ pminit
 	rts					
 
 ;
-; Movebird
+; Movebird => Deffered VBI
 ;
 
 bird
@@ -242,7 +342,7 @@ bird
 ypos	
 	.byte 30
 	
-xrr	.byte 0
+xrr	.byte 0								;Sicherer Platz für Register
 yrr	.byte 0
 
 waitc
@@ -254,13 +354,13 @@ movebird
 	sty yrr
 	
 	lda #<(pmadr+512)					;Player einlesen
-	sta zp3
+	sta zp4
 	lda #>(pmadr+512)
-	sta zp3+1
+	sta zp4+1
 	ldy ypos
 	ldx #9
 l12	lda bird,x
-	sta (zp3),y
+	sta (zp4),y
 	iny
 	dex
 	bne l12
@@ -288,8 +388,8 @@ down
 	lda ypos
 	cmp #100							;Wenn der Vogel bis zu dieser Position
 	bne eee								;gesunken ist GAME OVER!
-	lda #30								
-	sta ypos
+	lda #1							
+	sta kill
 eee		
 	ldx xrr								;Register zurück
 	ldy yrr		
@@ -391,29 +491,6 @@ ll1
 	;
 	; Zeichen in Bildschirm 2 bis 5 ablegen
 	;
-
-	ldy #0				
-	ldx #195
-	lda #4
-zz1								;Zeile am oberen Bildrand zeichnen
-	dex
-	jsr plot
-	cpx #45
-	bne zz1
-	
-	ldy #19
-	ldx #195
-	lda #5
-zz2								;Zeile am unteren Bildrand zeichnen
-	dex
-	jsr plot
-	cpx #45
-	bne zz2
-	
-	ldx	#50
-	ldy #5
-	lda #"1"
-	jsr plot
 	
 	ldy #10
 zz31
@@ -455,10 +532,12 @@ zz33
 ;
 
 zeichen	.byte 0
+xr4		.byte 0
+yr4		.byte 0
 
 plot	
-	stx xr							;Register sichern
-	sty yr
+	stx xr4							;Register sichern
+	sty yr4
 	
 	sta zeichen						;Zeichen zwischenspeichern
 	lda #<screen					;Zeiger auf Bildspeicher
@@ -484,8 +563,8 @@ set
 	lda zeichen
 	sta (zp),y
 	
-	ldx xr							;Register zurück
-	ldy yr
+	ldx xr4							;Register zurück
+	ldy yr4
 	
 	rts	
 	
@@ -558,11 +637,23 @@ points
 	.byte "0000000"
 delta
 	.byte 0
+	
+xr5
+	.byte 0
+yr5
+	.byte 0
+	
 score	
+	stx xr5
+	sty yr5
+
 	jsr sl0
 	dec delta
 	bne score
-
+	
+	ldx xr5
+	ldy yr5
+	
 	rts
 
 sl0
@@ -595,12 +686,12 @@ showscor
 	ldy #7
 	ldx #0
 	lda #<scorelin
-	sta zp
+	sta zp3
 	lda #>scorelin
-	sta zp+1
+	sta zp3+1
 ss
 	lda points,x
-	sta (zp),y
+	sta (zp3),y
 	inx
 	iny
 	cpx #7
@@ -629,12 +720,14 @@ cl
 ; Eine simple Warteschleife
 ;
 
-xr	.byte 0
-yr	.byte 0
+xrrr	
+	.byte 0
+yrrr	
+	.byte 0
 
 wait
-	stx xr						;Save register
-	sty yr
+	stx xrrr					;Save register
+	sty yrrr
 
 	ldx #50
 w0
@@ -645,10 +738,8 @@ w1
 	dex
 	bne w0
 	
-	lda xr						;Register zurück
-	tax
-	lda yr
-	tay
+	ldx xrrr					;Register zurück
+	ldy yrrr
 
 	rts
 
