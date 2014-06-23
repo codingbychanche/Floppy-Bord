@@ -149,7 +149,9 @@ begin
 wt
 	lda 644						; Wait for trigger
 	bne wt
-
+	
+	lda #0						; Init frame- counter for bird animation
+	sta frame
 	ldy #<movebird				; Activate deffered VBI for player (bird) movement
 	ldx #>movebird				
 	lda #7
@@ -172,17 +174,17 @@ wt
 ;
 
 main							
-	lda #1						;Endlos
-	sta delta					;Punkte anzeigen
+	lda #1						
+	sta delta					;Show Score
 	jsr score
 	jsr showscor
 
-	lda kill					;Lebt der Vogel noch?
+	lda kill					;Bird still alive?
 	cmp #1
-	bne notdeath				;ja!
+	bne notdeath				;Yes
 
 	;
-	; Totes- Routine!
+	; Death Code
 	;
 	
 	ldy #<vbi_imm_off			;Nein!
@@ -199,10 +201,11 @@ gover
 	sta msg+1					; (in case he won't belive)
 	lda #>m1
 	sta msg+2
+trig	
+	lda 644						;Wait for trigger
+	bne trig
 	
-	lda 644						;Warte auf Feuerknopf
-	bne gover
-	jmp titelscr				;Alles von vorne	
+	jmp titelscr				;Repeat!	
 	
 notdeath						
 	jmp main					; Vogel lebt, also alles wiederholen
@@ -287,6 +290,7 @@ s1
 	;
 	; Scrollbereich zurücksetzen auf Anfang
 	; Analog zur Routine in "Screeninit"
+	;
 	
 	lda #240				;ja!
 	sta blocks				;Anzahl der zu scrollenden Bildschirme zurücksetzen
@@ -356,85 +360,92 @@ pminit
 ; Movebird => Deffered VBI
 ;
 
-aniphase
-	.byte 0								; Frame counter for our bird
-fcount
-	.byte 0
-			
 	;
 	; Frames for our bird
 	;
 
 bird
 	.byte $00,$00,$7c,$42,$b7,$e7,$d2,$92,$0c,$00
+bird1
 	.byte $00,$00,$7c,$42,$b7,$e7,$d2,$12,$0c,$00
+bird2
 	.byte $00,$00,$7c,$42,$b7,$e7,$12,$12,$0c,$00
+
+framet
+	.word bird,bird1,bird2,bird1
+frame
+	.byte 0
+		
 ypos	
-	.byte 30
+	.byte 30				; Birds y- pos
 	
-xrr	.byte 0								;Sicherer Platz für Register
+xrr	.byte 0					; Memory for our registers
 yrr	.byte 0
 
 waitc
-	.byte 1
+	.byte 1					; Wait- counter. 
 
 movebird
-
-	stx xrr								;Register sichern
+	stx xrr					; Save registers
 	sty yrr
 	
-	lda #<(pmadr+512)					;Player einlesen
-	sta zp4
-	lda #>(pmadr+512)
+	lda frame				; Get index of frame
+	asl						; We are dealing with words, not bytes => multiply index by two
+	tax						; to get low- and then high byte from adress table 'framet'
+	lda framet,x			; Now get adress of frame data from table
+	sta zp4					; store in zeropage, low byte
+	inx						; move to high- byte in table
+	lda framet,x			; Get high- byte and put in zero- page
 	sta zp4+1
-
-	lda #3		
-	sta aniphase
-	ldx #30
-l122	
-	ldy ypos
-	lda #10
-	sta fcount
-l12	
-	lda bird,x
-	sta (zp4),y
-	iny
-	dex
-	dec fcount
-	bne l12
-	dec aniphase
-	bne l122
 	
-	lda #100
+	ldx ypos				; Get y- pos
+	ldy #9					; Init y- reg as index for frame data
+l12	
+	lda (zp4),y				; Display frame, get frame- data
+	sta pmadr+512,x			; Write in memory area for player 0
+	inx					
+	dey						; Do so, until all 10 bytes (including the 0 at the
+	bne l12					; top and bottom of frame to avoid garbage after changing vertikal pos od player
+	
+	lda #100				; Set horiz. position, always 100 :-)
 	sta hposp0
 	
-	dec waitc							;Warte Schleife
-	bne eee								;<>0? => ja! => nix tun
+	dec waitc				; Wait?
+	bne eee					; <>0? => yes! => do nothing
 	
-	lda #1								;=0 => Player nach unten bewegen		
+	lda #2					; =0 => Reset 'waitc'	and go on
 	sta waitc
 	
-	lda 644								;Feuerknopf abfragen
-	bne down							;Nicht gedrückt? Dann Vogel nach unten bewegen
-	
-	lda ypos							;Feuerknopf gedrückt, dann prüfen ob
-	cmp #30								;maximale Höhe erreicht
-	beq eee								;Ist das der Fall, dann nix tun
-	dec ypos							;Knopf gedrückt, Vogel nach oben
-	jmp eee								;und nix tun
+	lda 644					; Get trigger
+	bne down				; Not presssed? Bird loses altitute :-)
+
+	lda frame				; Trigger pressed?=> Already 3 frames shown?
+	cmp #3					
+	bne skip				; No, next frame
+	lda #0					; Yes, reset frame- counter
+	sta frame
+	jmp skip2				; Now, don's increase framecounter, skip it
+skip	
+	inc frame
+skip2
+	lda ypos				; Trigger pressed? If so, check
+	cmp #30					; if max height reached
+	beq eee					; in that case, do nothing
+	dec ypos				; Below max heigth, increase y- pos => move bird higher
+	jmp eee					; skip downward movement
 	
 down	
-	inc ypos							;Vogel nach unten bewegen
+	inc ypos				; Trigger not pressed, move bird lower
 	lda ypos
-	cmp #100							;Wenn der Vogel bis zu dieser Position
-	bne eee								;gesunken ist GAME OVER!
+	cmp #100				; As soon as bird reaches bottom of playfield
+	bne eee					; let him die => GAME OVER
 	lda #1							
 	sta kill
 eee		
-	ldx xrr								;Register zurück
+	ldx xrr					; Write x- and y- reg. back
 	ldy yrr		
 	
-	jmp $e462							;VBI verlassen
+	jmp $e462				; Leave intermediate VBI
 
 ;
 ; Clear PM- Graphics
