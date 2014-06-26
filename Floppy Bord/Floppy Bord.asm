@@ -92,6 +92,8 @@ kill
 	.byte 0
 wait
 	.byte 0
+seqend
+	.byte 0
 	
 ;
 ; Display Titel
@@ -124,6 +126,9 @@ begin
 
 	lda #0						; Bird is alive!
 	sta kill
+	
+	lda #0
+	sta seqend					; Start scrolling!
 	
 	lda #30						; Bird will apear at line 30 on the screen
 	sta ypos
@@ -174,11 +179,39 @@ wt
 ;
 
 main							
-	lda #1						
-	sta delta					;Show Score
-	jsr score
-	jsr showscor
+	lda seqend					;Scroll sequence end?
+	beq scrollon				;No, scroll on=> VBI remains on!
+	
+	;
+	; Stop scrolling and init new playfield
+	;
 
+	ldy #<vbi_imm_off		 	;VBI off
+	ldx #>vbi_imm_off	
+	lda #6						
+	jsr $e45c
+	
+	jsr screeninit
+	
+	lda #0						; Message=> scrolling enabeled
+	sta seqend
+	
+	ldy #<scroll				; start scroll routine
+	ldx #>scroll
+	lda #6
+	jsr $e45c
+	
+	ldx #100
+incsc
+	lda #1					; Increase score!	
+	sta delta				; Show Score
+	jsr score
+	jsr showscor	
+	jsr wtt
+	dex
+	bne incsc
+
+scrollon
 	lda kill					;Bird still alive?
 	cmp #1
 	bne notdeath				;Yes
@@ -202,7 +235,8 @@ gover
 	lda #>m1
 	sta msg+2
 trig	
-	lda 644						;Wait for trigger
+	lda	consol					;Wait for start key
+	cmp #6
 	bne trig
 	
 	jmp titelscr				;Repeat!	
@@ -316,10 +350,12 @@ lll01
 	iny
 	iny
 	dex
-	bne lll01				;Alle Adressen? => Wenn ja, VBI verlassen	
+	bne lll01				; Alle Adressen? => Wenn ja, VBI verlassen	
+	lda #1					; Message=> scroll sequence over => stop vbi
+	sta seqend						
 out	
 	ldx xr					;Register zurück schreiben
-	ldy yr					
+	ldy yr			
 	jmp $e45f				;VBI verlassen
 
 ;
@@ -424,7 +460,7 @@ l12
 	bne skip				; No, next frame
 	lda #0					; Yes, reset frame- counter
 	sta frame
-	jmp skip2				; Now, don's increase framecounter, skip it
+	jmp skip2				; Now, dont increase framecounter, skip it
 skip	
 	inc frame
 skip2
@@ -492,6 +528,18 @@ cl1
 
 zeile
 	.byte 0
+width
+	.byte 0
+pieces
+	.byte 0
+pos
+	.byte 0
+	
+le	
+	.byte 5,10,8,9,11,12,3,5,10,10,10		; Obstacle lenght
+ab
+	.byte 20,20,15,18,19,13,12,15,11,15		; Distance between obstacles
+ga	.byte 0									; Store for 'ab'
 	
 screeninit	
 
@@ -500,52 +548,52 @@ screeninit
 	; Display- List für den Spielebildschirm zurücksetzen.
 	;
 
-	lda #<(adtab+1)					;Zeiger auf Adresstabelle		
-	sta zp2							;welche die Startadressen des Spielbildschirms
-	lda #>(adtab+1)					;enthält in zp- Register 2
+	lda #<(adtab+1)				; Pointer to adress table containing
+	sta zp2						; adresses of lines in screen ram of 
+	lda #>(adtab+1)				; first screen
 	sta zp2+1
 	
-	lda #<(z0+1)					;Zeiger auf Bildadresse in Zeile 0		
-	sta zp							;der Display- List des Spiele-
-	lda #>(z0+1)					;bildschirms in zp- Register 1
+	lda #<(z0+1)				; Zeiger auf Bildadresse in Zeile 0		
+	sta zp						; der Display- List des Spiele-
+	lda #>(z0+1)				; bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #19							;20 Zeilen
+	ldx #19						;20 Zeilen
 	ldy #0
 lll0
-	lda (zp2),y						;low- Byte
+	lda (zp2),y					;low- Byte
 	sta (zp),y
 	iny
-	lda (zp2),y						;High- Byte
+	lda (zp2),y					;High- Byte
 	sta (zp),y
 	iny
 	iny
 	dex
-	bne lll0						;Alle Adressen?
+	bne lll0					;Alle Adressen?
 
 	;
 	; Alle Bildschirme löschen!
 	;
 	
-	lda #<screen					;Zeiger auf Bildspeicher
-	sta zp							;In Zero- Page
+	lda #<screen				; Pointer on screen RAM
+	sta zp						; Store in zero page
 	lda #>screen
 	sta zp+1
 	
-	lda #maxlin						;Anzahl Zeilen
+	lda #maxlin					; Max number of rows/ screen
 	sta zeile
 
 ll0	
-	ldx #(bytlin*screens)	    	;Bytes je Zeile
-	ldy #0							;Offset Zeropage Zeiger
+	ldx #(bytlin*screens)	    ; Bytes/ row
+	ldy #0						; Offset for zero page pointer
 ll1
-	lda #0							;Zeile füllen
+	lda #0						; Clear row
 	sta (zp),y
 	iny
 	dex
-	bne ll1							;Zeile beendet?
-	dey								;Ja!
-	clc
+	bne ll1						; Row done= clear?
+	dey							; Yes!
+	clc							; Calc adress for next row
 	lda zp
 	adc #(bytlin*screens)
 	sta zp
@@ -553,47 +601,48 @@ ll1
 	adc #0
 	sta zp+1
 	
-	dec zeile
-	bne ll0							;Alle Zeilen?						
+	dec zeile					
+	bne ll0						; All Lines?						
 
 	;
-	; Zeichen in Bildschirm 2 bis 5 ablegen
+	; Draw Obstacles
 	;
 
-	ldx #240
-	ldy #19
-	lda #2+127
-lp1
-	jsr plot
-	dex
-	bne lp1
-	
-	
-	ldy #10
-zz31
-	ldx #100
-	lda #2
-zz3
-	jsr plot
-	dex
-	cpx #90
-	bne zz3
-	dey
-	bne zz31
-	
-	ldy #10
-zz311
-	ldx #150
-	lda #2
-zz33
-	jsr plot
-	dex
-	cpx #130
-	bne zz33
-	iny
-	cpy #19
-	bne zz311
+	lda #50						; Set Start- Pos
+	sta pos
 
+	lda #10						; Set Number of Obstacles
+	sta pieces
+pl00
+	lda pieces					; Get length from table
+	tax							
+	lda le,x
+	tay
+
+pl0
+	ldx pos							
+	lda #8						; Each obstacle is 8 bytes width
+	sta width
+	lda #1						; Which char?
+pl1
+	inx							; Draw obstacle
+	jsr plot
+	dec width
+	bne pl1						; Full widht?
+	dey							; Full length?
+	bne pl0
+	
+	ldx pieces					
+	lda ab,x
+	sta ga
+	lda pos						; Set x- Pos for next obstacle
+	clc
+	adc ga
+	sta pos
+	
+	dec pieces					; Next piece
+	bne pl00
+	
 	rts
 
 ;
@@ -757,6 +806,8 @@ sl2
 ;
 
 showscor
+	stx xr5
+	sty yr5
 	ldy #7
 	ldx #0
 	lda #<scorelin
@@ -770,6 +821,9 @@ ss
 	iny
 	cpx #7
 	bne ss
+	
+	ldx xr5
+	ldy yr5
 	
 	rts
 
@@ -786,6 +840,33 @@ cl
 	inx
 	cpx #6
 	bne cl
+	rts
+	
+;
+; Wait
+;
+wtt
+	pha
+	txa
+	pha
+	tya
+	pha
+
+	ldx #100
+ww0	
+	ldy #100
+ww1	
+	dey
+	bne ww1
+	dex
+	bne ww0
+	
+	pla
+	tay
+	pla
+	tax
+	pla
+	
 	rts
 
 ;
@@ -987,8 +1068,9 @@ chset
 
 	org $4000
 chset12
-:8	.byte 0
-:1000 .byte $FF
+:8		.byte 0
+:1000 .byte $FF	; Pixel= 11
+
 
 ;
 ; Bildspeicher Spielebildschirm
