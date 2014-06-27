@@ -2,7 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 22.6.2014
+; BF 27.6.2014
 ;
 
 ; ANTIC
@@ -120,56 +120,59 @@ st
 ;
 
 begin
-	jsr screeninit				; Game- screen init (draw playfield, init antic- program)
-	jsr clscor					; Clear old score
-	jsr showscor				; Show score
+	jsr screeninit			; Game- screen init (draw playfield, init antic- program)
+	jsr clscor				; Clear old score
+	jsr showscor			; Show score
 
-	lda #0						; Bird is alive!
+	lda #0					; Bird is alive!
 	sta kill
 	
-	lda #0
-	sta seqend					; Start scrolling!
+	lda #0					; Enable collison (clear collision registers)
+	sta 53278
 	
-	lda #30						; Bird will apear at line 30 on the screen
+	lda #0
+	sta seqend				; Start scrolling!
+	
+	lda #30					; Bird will apear at line 30 on the screen
 	sta ypos
 
-	lda #<dli   				; Display- List- Interrupt on
+	lda #<dli   			; Display- List- Interrupt on
 	sta vdlist
 	lda #>dli
 	sta vdlist+1
 	lda #$C0
 	sta NMIEN
 	
-	lda #<dlgame				; Show playfield		
+	lda #<dlgame			; Show playfield		
 	sta dlptr						
 	lda #>dlgame
 	sta dlptr+1
 	
-	lda #<message				; Show message below score, just for fun
+	lda #<message			; Show message below score, just for fun
 	sta msg+1
 	lda #>message
 	sta msg+2
 	
-	jsr pminit					; Init sprites
+	jsr pminit				; Init sprites
 wt
-	lda 644						; Wait for trigger
+	lda 644					; Wait for trigger
 	bne wt
 	
-	lda #0						; Init frame- counter for bird animation
+	lda #0					; Init frame- counter for bird animation
 	sta frame
-	ldy #<movebird				; Activate deffered VBI for player (bird) movement
+	ldy #<movebird			; Activate deffered VBI for player (bird) movement
 	ldx #>movebird				
 	lda #7
 	jsr $e45c
 	
-	lda #1						; Delay for scrolling
+	lda #1					; Delay for scrolling
 	sta wait
-	lda #3						; Color clocks for fine scroll
+	lda #3					; Color clocks for fine scroll
 	sta clocks
-	lda #240					;40 x 6 =240 Bytes = 6 Bildschimre 
-	sta blocks   				;werden gescrollt, danach alles von Vorne :-)
+	lda #240				;40 x 6 =240 Bytes = 6 Bildschimre 
+	sta blocks   			;werden gescrollt, danach alles von Vorne :-)
 	
-	ldy #<scroll				;Scroll Routine im Immediate VBI
+	ldy #<scroll			;Scroll Routine im Immediate VBI
 	ldx #>scroll
 	lda #6
 	jsr $e45c	
@@ -179,24 +182,24 @@ wt
 ;
 
 main							
-	lda seqend					;Scroll sequence end?
-	beq scrollon				;No, scroll on=> VBI remains on!
+	lda seqend				;Scroll sequence end?
+	beq scrollon			;No, scroll on=> VBI remains on!
 	
 	;
 	; Stop scrolling and init new playfield
 	;
 
-	ldy #<vbi_imm_off		 	;VBI off
+	ldy #<vbi_imm_off		 ;VBI off
 	ldx #>vbi_imm_off	
 	lda #6						
 	jsr $e45c
 	
 	jsr screeninit
 	
-	lda #0						; Message=> scrolling enabeled
+	lda #0					; Message=> scrolling enabeled
 	sta seqend
 	
-	ldy #<scroll				; start scroll routine
+	ldy #<scroll			; start scroll routine
 	ldx #>scroll
 	lda #6
 	jsr $e45c
@@ -212,17 +215,17 @@ incsc
 	bne incsc
 
 scrollon
-	lda kill					;Bird still alive?
+	lda kill				;Bird still alive?
 	cmp #1
-	bne notdeath				;Yes
+	bne notdeath			;Yes
 
 	;
 	; Death Code
 	;
 	
-	ldy #<vbi_imm_off			;Nein!
-	ldx #>vbi_imm_off			;VBI für Scroll- und Vogelbewegung
-	lda #6						;stoppen => ins leere zeigen lassen
+	ldy #<vbi_imm_off		; Bird is death!
+	ldx #>vbi_imm_off		; Stop bird movement= Bird VBI
+	lda #6					; VBI is now re- routet
 	jsr $e45c
 	
 	ldy #<vbi_deff_off
@@ -230,19 +233,19 @@ scrollon
 	lda #7
 	jsr $e45c
 gover	
-	lda #<m1					; Inform the player that he has just died
-	sta msg+1					; (in case he won't belive)
+	lda #<m1				; Inform the player that he has just died
+	sta msg+1				; (in case he won't belive)
 	lda #>m1
 	sta msg+2
 trig	
-	lda	consol					;Wait for start key
+	lda	consol				; Wait for start key
 	cmp #6
 	bne trig
 	
-	jmp titelscr				;Repeat!	
+	jmp titelscr			; Show titel = > this game is over!	
 	
 notdeath						
-	jmp main					; Vogel lebt, also alles wiederholen
+	jmp main				; Bird is alive. Repeat main loop
 	
 ;
 ; Leere VBI- Routinen
@@ -252,6 +255,7 @@ vbi_imm_off
 	jmp $e45f
 vbi_deff_off
 	jmp $e462
+	
 ;
 ; Do Scroll => Immidiate VBI
 ;
@@ -478,6 +482,12 @@ down
 	lda #1							
 	sta kill
 eee		
+	lda 53252				; Collision bird with background?
+	cmp #4
+	bne ee2					; No
+	lda #1					; Yes => kill bird	
+	sta kill		
+ee2	
 	ldx xrr					; Write x- and y- reg. back
 	ldy yrr		
 	
@@ -572,7 +582,7 @@ lll0
 	bne lll0					;Alle Adressen?
 
 	;
-	; Alle Bildschirme löschen!
+	; Clear Playfield
 	;
 	
 	lda #<screen				; Pointer on screen RAM
@@ -648,7 +658,7 @@ pl1
 ;
 ; Plot Routine
 ;
-; Setzt ein belibiges Zeichen in den Bildspeicher
+; Setzt ein beliebiges Zeichen in den Bildspeicher
 ;
 ; x-Reg	= Xpos
 ; y-Reg	= Ypos
@@ -697,7 +707,7 @@ set
 ;
 
 dli
-	pha								;Register retten
+	pha					;Register retten
 	txa
 	pha
 	tya
@@ -706,43 +716,83 @@ dli
 	lda vcount
 	asl
 	cmp #38
-	bcs dli1						;Aktuelle Zeile > 38?
+	bcs dli1			;Aktuelle Zeile > 38?
+
+	;
+	; Set Chset and colors for score display
+	;
 	
-	lda #>chset						;Nein!=> Wir sind also noch im Anzeigefeld 
-	sta $d409						;für die Punkte
-	lda #13							;Farbe für Großbuchstaben Gr.1/2						
+	lda #>chset			;Nein!=> Wir sind also noch im Anzeigefeld 
+	sta $d409			;für die Punkte
+	lda #13				;Farbe für Großbuchstaben Gr.1/2						
 	sta colpf0s						
-	lda #13							;Farbe für Kleinbuchstaben Gr.1/2. Farbe für Buchstaben Gr.0
+	lda #13				;Farbe für Kleinbuchstaben Gr.1/2. Farbe für Buchstaben Gr.0
 	sta colpf1s
 	lda #116
 	sta colpf2s
 	lda #155
 	sta colpf3s
-	lda #116						;Dunkelblau der Hintergrund
+	lda #116			;Dunkelblau der Hintergrund
 	sta wsync
 	sta colbaks
 
 dli1								
-	lda vcount						;Aktuelle Zeile < 38?
-	asl								;Wir sind also noch im Anzeigefeld für
-	cmp #38							;die Punkte
-	bcc dlout						;=> nix tun
+	lda vcount			;Aktuelle Zeile < 38?
+	asl					;Wir sind also noch im Anzeigefeld für
+	cmp #38				;die Punkte
+	bcc dlout			;=> nix tun
+
+	;
+	; Set chset for playfield and playfield colors
+	;
 												
-	lda #>chset12					;Nein: Wir sind im Spielfeldbereich	
-	sta $d409						;=>Spielfeldbereich einfärben.
-	lda #103						; Für Bit Kombi: 01
+	lda #>chset12		;Nein: Wir sind im Spielfeldbereich	
+	sta $d409			;=>Spielfeldbereich einfärben.
+	lda #103			; Für Bit Kombi: 01
 	sta colpf0s										
-	lda #120						; Für Bit Kombi: 10
+	lda #120			; Für Bit Kombi: 10
 	sta colpf1s
-	lda #196						; Für Bit Kombi: 11
+	lda #246			; Für Bit Kombi: 11
 	sta colpf2s
-	lda #255						;Für die inversen Zeichen=Farbe 5
+	lda #255			;Für die inversen Zeichen=Farbe 5
 	sta colpf3s
-	lda #123						;Helblau der Hintergrund :)
+
+	; Draw sky
+
+	ldx #15				; Draw Background
+	lda #127			; Bright blue 
+dd1
+	sta wsync			; Init background color reg.
+	sta colbaks
+	ldy #75				; This determins the height of each color cycle
+dd2
+	dey
+	bne dd2
+	
+	sec					; Blue get's darker
+	sbc #1
+	dex					; Unttil we reach the lower third
+	bne dd1				; of our playfield
+
+	; Draw ground
+
+	ldx #15				; Draw ground
+	lda #194			; Start with dark green
+dc1
 	sta wsync
 	sta colbaks
+	ldy #19
+dc2
+	dey					; Heigh of each color cycle
+	bne dc2
+	clc
+	adc #1
+	dex
+	bne dc1
+
+
 dlout
-	pla								;Register zurückschreiben
+	pla					; Get registers back
 	tay
 	pla
 	tax
@@ -1069,7 +1119,7 @@ chset
 	org $4000
 chset12
 :8		.byte 0
-:1000 .byte $FF	; Pixel= 11
+:1000 	.byte $ff	; Pixel= 11
 
 
 ;
