@@ -4,6 +4,8 @@
 ;
 ; BF 27.6.2014
 ;
+; Style hint: 5 Tab's for inline comments!
+;
 
 ; ANTIC
 
@@ -133,7 +135,7 @@ begin
 	lda #0
 	sta seqend				; Start scrolling!
 	
-	lda #30					; Bird will apear at line 30 on the screen
+	lda #50					; Bird will apear at line 50 on the screen
 	sta ypos
 
 	lda #<dli   			; Display- List- Interrupt on
@@ -169,7 +171,7 @@ wt
 	sta wait
 	lda #3					; Color clocks for fine scroll
 	sta clocks
-	lda #240				;40 x 6 =240 Bytes = 6 Bildschimre 
+	lda #190				;40 x 6 =240 Bytes = 6 Bildschimre 
 	sta blocks   			;werden gescrollt, danach alles von Vorne :-)
 	
 	ldy #<scroll			;Scroll Routine im Immediate VBI
@@ -274,10 +276,12 @@ clocks
 
 xr	.byte 0					;Sicherer Platz für Register
 yr	.byte 0
+a	.byte 0
 
 scroll
-	stx xr					;Register sichern
+	stx xr
 	sty yr
+	sta a
 
 	dec wait				;wait gibt an wie oft scroll aufgerufen werden
 	beq s11					;muss, damit einmal gescrollt werden wird
@@ -330,7 +334,7 @@ s1
 	; Analog zur Routine in "Screeninit"
 	;
 	
-	lda #240				;ja!
+	lda #190				;ja!
 	sta blocks				;Anzahl der zu scrollenden Bildschirme zurücksetzen
 	
 	lda #<(adtab+1)			;Zeiger auf Adresstabelle		
@@ -354,13 +358,16 @@ lll01
 	iny
 	iny
 	dex
-	bne lll01				; Alle Adressen? => Wenn ja, VBI verlassen	
-	lda #1					; Message=> scroll sequence over => stop vbi
+	bne lll01		; Alle Adressen? => Wenn ja, VBI verlassen	
+	lda #1			; Message=> scroll sequence over => stop vbi
 	sta seqend						
 out	
-	ldx xr					;Register zurück schreiben
-	ldy yr			
-	jmp $e45f				;VBI verlassen
+	
+	ldx xr
+	ldy yr
+	lda a
+	
+	jmp $e45f		;VBI verlassen
 
 ;
 ; PM- Grafik initialisieren
@@ -391,8 +398,30 @@ pminit
 	lda #2
 	sta gractl
 
-	lda #%00100011
+	lda #%00111101
 	sta 623
+	
+	;
+	; First thing we do, we draw borders for our
+	; playfield: Player 1 serves as left, player 2 as right border
+	;
+
+	ldx #255
+	lda #$ff
+plo1
+	sta pmadr+640,x
+	sta pmadr+768,x
+	dex
+	bne plo1
+	
+	lda #40
+	sta hposp1
+	lda #208
+	sta hposp2
+	
+	lda #0
+	sta colpm1
+	sta colpm2
 	
 	rts					
 
@@ -445,7 +474,7 @@ l12
 	sta pmadr+512,x			; Write in memory area for player 0
 	inx					
 	dey						; Do so, until all 10 bytes (including the 0 at the
-	bne l12					; top and bottom of frame to avoid garbage after changing vertikal pos od player
+	bne l12					; top and bottom of frame to avoid garbage after changing vertical pos of player
 	
 	lda #100				; Set horiz. position, always 100 :-)
 	sta hposp0
@@ -494,7 +523,7 @@ ee2
 	jmp $e462				; Leave intermediate VBI
 
 ;
-; Clear PM- Graphics
+; Clear PM- Graphics => all!
 ;
 
 clpm
@@ -511,7 +540,7 @@ cl1
 	rts
 
 ;
-; Game- Screen initialisiern
+; Game- Screen initialization
 ;
 ; Prinzip:
 ; Wir haben insgesammt 6 Spielebildschirme die endlos gescrollt werden und nach jedem
@@ -538,19 +567,7 @@ cl1
 
 zeile
 	.byte 0
-width
-	.byte 0
-pieces
-	.byte 0
-pos
-	.byte 0
-	
-le	
-	.byte 5,10,8,9,11,12,3,5,10,10,10		; Obstacle lenght
-ab
-	.byte 20,20,15,18,19,13,12,15,11,15		; Distance between obstacles
-ga	.byte 0									; Store for 'ab'
-	
+
 screeninit	
 
 	;
@@ -558,52 +575,58 @@ screeninit
 	; Display- List für den Spielebildschirm zurücksetzen.
 	;
 
-	lda #<(adtab+1)				; Pointer to adress table containing
-	sta zp2						; adresses of lines in screen ram of 
-	lda #>(adtab+1)				; first screen
+	pha					; Save registers
+	txa
+	pha
+	tya
+	pha
+
+	lda #<(adtab+1)		; Pointer to adress table containing
+	sta zp2				; adresses of lines in screen ram of 
+	lda #>(adtab+1)		; first screen
 	sta zp2+1
 	
-	lda #<(z0+1)				; Zeiger auf Bildadresse in Zeile 0		
-	sta zp						; der Display- List des Spiele-
-	lda #>(z0+1)				; bildschirms in zp- Register 1
+	lda #<(z0+1)		; Zeiger auf Bildadresse in Zeile 0		
+	sta zp				; der Display- List des Spiele-
+	lda #>(z0+1)		; bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #19						;20 Zeilen
+	ldx #19				;20 Zeilen
 	ldy #0
 lll0
-	lda (zp2),y					;low- Byte
+	lda (zp2),y			;low- Byte
 	sta (zp),y
 	iny
-	lda (zp2),y					;High- Byte
+	lda (zp2),y			;High- Byte
 	sta (zp),y
 	iny
 	iny
 	dex
-	bne lll0					;Alle Adressen?
+	bne lll0			;Alle Adressen?
 
 	;
 	; Clear Playfield
 	;
 	
-	lda #<screen				; Pointer on screen RAM
-	sta zp						; Store in zero page
+	lda #<screen		; Pointer on screen RAM
+	sta zp				; Store in zero page
 	lda #>screen
 	sta zp+1
 	
-	lda #maxlin					; Max number of rows/ screen
+	lda #maxlin			; Max number of rows/ screen
 	sta zeile
 
 ll0	
-	ldx #(bytlin*screens)	    ; Bytes/ row
-	ldy #0						; Offset for zero page pointer
+	ldx #(bytlin*screens)	; Bytes/ row
+	ldy #0				; Offset for zero page pointer
 ll1
-	lda #0						; Clear row
+	lda #0				; Clear row
 	sta (zp),y
 	iny
 	dex
-	bne ll1						; Row done= clear?
-	dey							; Yes!
-	clc							; Calc adress for next row
+	bne ll1				; Row done= clear?
+	dey					; Yes!
+	clc					; Calc adress for next row
 	lda zp
 	adc #(bytlin*screens)
 	sta zp
@@ -612,46 +635,44 @@ ll1
 	sta zp+1
 	
 	dec zeile					
-	bne ll0						; All Lines?						
+	bne ll0				; All Lines?						
 
 	;
 	; Draw Obstacles
 	;
 
-	lda #50						; Set Start- Pos
-	sta pos
-
-	lda #10						; Set Number of Obstacles
-	sta pieces
-pl00
-	lda pieces					; Get length from table
-	tax							
-	lda le,x
-	tay
-
-pl0
-	ldx pos							
-	lda #8						; Each obstacle is 8 bytes width
-	sta width
-	lda #1						; Which char?
-pl1
-	inx							; Draw obstacle
+	ldx #0
+	ldy #0
+	lda #5
+lli
 	jsr plot
-	dec width
-	bne pl1						; Full widht?
-	dey							; Full length?
-	bne pl0
+	inx
+	cpx #241
+	bne lli
 	
-	ldx pieces					
-	lda ab,x
-	sta ga
-	lda pos						; Set x- Pos for next obstacle
-	clc
-	adc ga
-	sta pos
+	ldx #0
+	ldy #1
+	lda #2
+lli1
+	inx
+	jsr plot
+	cpx #241
+	bne lli1
 	
-	dec pieces					; Next piece
-	bne pl00
+	ldx #0
+	ldy #19
+	lda #7
+lli2
+	jsr plot
+	inx
+	cpx #241
+	bne lli2
+	
+	pla				; Get registers back
+	tay
+	pla
+	tax
+	pla
 	
 	rts
 
@@ -724,15 +745,15 @@ dli
 	
 	lda #>chset			;Nein!=> Wir sind also noch im Anzeigefeld 
 	sta $d409			;für die Punkte
-	lda #13				;Farbe für Großbuchstaben Gr.1/2						
+	lda #5				;Farbe für Großbuchstaben Gr.1/2						
 	sta colpf0s						
-	lda #13				;Farbe für Kleinbuchstaben Gr.1/2. Farbe für Buchstaben Gr.0
+	lda #20 			;Farbe für Kleinbuchstaben Gr.1/2. Farbe für Buchstaben Gr.0
 	sta colpf1s
 	lda #116
 	sta colpf2s
 	lda #155
 	sta colpf3s
-	lda #116			;Dunkelblau der Hintergrund
+	lda #14				; Bright wite for the background
 	sta wsync
 	sta colbaks
 
@@ -748,11 +769,11 @@ dli1
 												
 	lda #>chset12		;Nein: Wir sind im Spielfeldbereich	
 	sta $d409			;=>Spielfeldbereich einfärben.
-	lda #103			; Für Bit Kombi: 01
+	lda #0				; Für Bit Kombi: 01
 	sta colpf0s										
-	lda #120			; Für Bit Kombi: 10
+	lda #200			; Für Bit Kombi: 10
 	sta colpf1s
-	lda #246			; Für Bit Kombi: 11
+	lda #14				; Für Bit Kombi: 11
 	sta colpf2s
 	lda #255			;Für die inversen Zeichen=Farbe 5
 	sta colpf3s
@@ -760,7 +781,7 @@ dli1
 	; Draw sky
 
 	ldx #15				; Draw Background
-	lda #127			; Bright blue 
+	lda #127			; Bright blue
 dd1
 	sta wsync			; Init background color reg.
 	sta colbaks
@@ -896,7 +917,7 @@ cl
 ; Wait
 ;
 wtt
-	pha
+	pha				; Save registers
 	txa
 	pha
 	tya
@@ -911,7 +932,7 @@ ww1
 	dex
 	bne ww0
 	
-	pla
+	pla				; Get registers back
 	tay
 	pla
 	tax
@@ -946,6 +967,8 @@ titel
 	; Display- List für den Spielebildschirm
 	;
 	org $1000
+	
+bytes	equ 239					;Bytes je Zeile
 
 dlgame							;Game Screen						
 	.byte $70+128				;Leer
@@ -954,15 +977,13 @@ dlgame							;Game Screen
 	; Das Spielfeld besteht aus 6 Bildschirmen
 	; Damit ist jede Zeile 6 x 40 = 240 Bytes lang
 
-bytes	equ 239							;Bytes je Zeile
 
-	.byte $40+gr0,a(ln1)
+	.byte 112
 	.byte $40+gr1,a(scorelin)		;Punkte- Anzeige
+	.byte 112
 msg
 	.byte $40+gr1,a(message)		; Message line, tell the player what's going on
 
-	.byte $40+gr0,a(ln2)
-	
 	.byte $70+128
 	
 z0	.byte $40+gr12,a(screen)		 ;Gamescreen, Zeile 0
@@ -991,11 +1012,11 @@ z19	.byte $40+gr12,a(screen+19*bytes)
 	.byte $41,a(dlgame)
 	
 scorelin
-	.byte $02,"score             !"
+	.byte "score               "
 message
-	.byte $02,"FLY LITTLE BIRD.. !"
+	.byte "FLY LITTLE BIRD..   "
 m1
-	.byte $02,"    GAME OVER     !"
+	.byte "    GAME OVER       "
 	
 	; Rahmen für die Punkteanzeige
 	
@@ -1044,7 +1065,7 @@ adtab
 ; Text, Gr. 0
 ;
 
-	 org $2000
+	 org $3000
 chset
 	.byte $00,$00,$00,$00,$00,$00,$00,$00
 	.byte $02,$02,$02,$02,$02,$02,$02,$02
@@ -1118,8 +1139,17 @@ chset
 
 	org $4000
 chset12
-:8		.byte 0
-:1000 	.byte $ff	; Pixel= 11
+:8		.byte 0																; Empty						//0
+ 		.byte 127	,	127	,	127	,	31	,	31	,	7	,	7	,	1	; Cloud tile 1, bottom left //1
+		.byte 255	,	125	,	20	,	0	,	0	,	0	,	0	,	0	; Cloud tile bottom			//2
+		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cload tile top			//3
+		.byte 253	,	253	,	244	,	244	,	208	,	208	,	64	,	64  ; Cloud tile, bottom right	//4
+:8		.byte 255															; Cloud tile, solid block	//5
+
+:8		.byte 85															; Solid black block			//6		
+		.byte 85	,	85	,	85	,	85	,	85	,	101	,	166	,	170 ; Solid black block, bottom //7
+							
+		
 
 
 ;
