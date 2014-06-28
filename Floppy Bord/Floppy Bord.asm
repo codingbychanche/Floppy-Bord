@@ -103,17 +103,17 @@ seqend
 
 titelscr
 
-	jsr clpm					; Clear player 0 
+	jsr clpm			; Clear player 0 
 	
-	lda #<dltitel				; Show titel screen
+	lda #<dltitel			; Show titel screen
 	sta dlptr	
 	lda #>dltitel
 	sta dlptr+1
 	
-	lda #>chset					; Activate char set for graphics 0,1,2
+	lda #>chset			; Activate char set for graphics 0,1,2
 	sta 756
 st
-	lda consol					; Now wait until the start key is pressed
+	lda consol			; Now wait until the start key is pressed
 	and #1
 	beq begin
 	jmp st	
@@ -126,16 +126,15 @@ begin
 	jsr clscor				; Clear old score
 	jsr showscor			; Show score
 
-	lda #0					; Bird is alive!
+	lda #0				; Bird is alive!
 	sta kill
 	
-	lda #0					; Enable collison (clear collision registers)
+	lda #0				; Enable collison (clear collision registers)
 	sta 53278
 	
 	lda #0
-	sta seqend				; Start scrolling!
-	
-	lda #50					; Bird will apear at line 50 on the screen
+	sta seqend				
+	lda #50				; Bird will apear at line 50 on the screen
 	sta ypos
 
 	lda #<dli   			; Display- List- Interrupt on
@@ -155,23 +154,23 @@ begin
 	lda #>message
 	sta msg+2
 	
-	jsr pminit				; Init sprites
+	jsr pminit			; Init sprites
 wt
-	lda 644					; Wait for trigger
+	lda 644				; Wait for trigger
 	bne wt
 	
-	lda #0					; Init frame- counter for bird animation
+	lda #0				; Init frame- counter for bird animation
 	sta frame
 	ldy #<movebird			; Activate deffered VBI for player (bird) movement
 	ldx #>movebird				
 	lda #7
 	jsr $e45c
 	
-	lda #1					; Delay for scrolling
+	lda #1				; Delay for scrolling
 	sta wait
-	lda #3					; Color clocks for fine scroll
+	lda #3				; Color clocks for fine scroll
 	sta clocks
-	lda #190				;40 x 6 =240 Bytes = 6 Bildschimre 
+	lda #190			;40 x 6 =240 Bytes = 6 Bildschimre 
 	sta blocks   			;werden gescrollt, danach alles von Vorne :-)
 	
 	ldy #<scroll			;Scroll Routine im Immediate VBI
@@ -184,7 +183,7 @@ wt
 ;
 
 main							
-	lda seqend				;Scroll sequence end?
+	lda seqend			;Scroll sequence end?
 	beq scrollon			;No, scroll on=> VBI remains on!
 	
 	;
@@ -198,7 +197,7 @@ main
 	
 	jsr screeninit
 	
-	lda #0					; Message=> scrolling enabeled
+	lda #0				; Message=> scrolling enabeled
 	sta seqend
 	
 	ldy #<scroll			; start scroll routine
@@ -208,8 +207,8 @@ main
 	
 	ldx #100
 incsc
-	lda #1					; Increase score!	
-	sta delta				; Show Score
+	lda #1				; Increase score!	
+	sta delta			; Show Score
 	jsr score
 	jsr showscor	
 	jsr wtt
@@ -217,7 +216,7 @@ incsc
 	bne incsc
 
 scrollon
-	lda kill				;Bird still alive?
+	lda kill			;Bird still alive?
 	cmp #1
 	bne notdeath			;Yes
 
@@ -227,7 +226,7 @@ scrollon
 	
 	ldy #<vbi_imm_off		; Bird is death!
 	ldx #>vbi_imm_off		; Stop bird movement= Bird VBI
-	lda #6					; VBI is now re- routet
+	lda #6				; VBI is now re- routet
 	jsr $e45c
 	
 	ldy #<vbi_deff_off
@@ -235,19 +234,19 @@ scrollon
 	lda #7
 	jsr $e45c
 gover	
-	lda #<m1				; Inform the player that he has just died
-	sta msg+1				; (in case he won't belive)
+	lda #<m1			; Inform the player that he has just died
+	sta msg+1			; (in case he won't belive)
 	lda #>m1
 	sta msg+2
 trig	
-	lda	consol				; Wait for start key
+	lda	consol			; Wait for start key
 	cmp #6
 	bne trig
 	
 	jmp titelscr			; Show titel = > this game is over!	
 	
 notdeath						
-	jmp main				; Bird is alive. Repeat main loop
+	jmp main			; Bird is alive. Repeat main loop
 	
 ;
 ; Leere VBI- Routinen
@@ -264,17 +263,17 @@ vbi_deff_off
 ; Es kann eine (nahezu) beliebige Anzahl Zeilen, horizontal, verschoben werden
 ; Da der Offset auf die Zeilenadressen in der Display List - das Y- Register - 
 ; nur 8- Bit breit ist, und die Zeilenadresse aus 2 Bytes besteht, sind maximal
-; 256/2= 128 Zeilen mšglich.... 
+; 256/2= 128 Zeilen mï¿½glich.... 
 ;
 
 lines	
-	.byte 0					;Ablage fŸr Anzahl der Zeilen, die gescrollt werden
+	.byte 0					;Ablage fï¿½r Anzahl der Zeilen, die gescrollt werden
 blocks
-	.byte 0					;Ablage fŸr die Anzahl der Bildschirme die gescrollt werden
+	.byte 0					;Ablage fï¿½r die Anzahl der Bildschirme die gescrollt werden
 clocks
 	.byte 0					;Finescroll, Anzahl der Color Clocks um die geschoben werden soll
 
-xr	.byte 0					;Sicherer Platz fŸr Register
+xr	.byte 0					;Sicherer Platz fï¿½r Register
 yr	.byte 0
 a	.byte 0
 
@@ -285,29 +284,29 @@ scroll
 
 	dec wait				;wait gibt an wie oft scroll aufgerufen werden
 	beq s11					;muss, damit einmal gescrollt werden wird
-	ldx xr					;wait <>0=> zurŸck, nicht scrollen!
-	ldy yr					;Register zurŸck schreiben
+	ldx xr					;wait <>0=> zurï¿½ck, nicht scrollen!
+	ldy yr					;Register zurï¿½ck schreiben
 	jmp $e462				;VBI verlassen
 s11
-	lda #1					;wait zurŸcksetzen
+	lda #1					;wait zurï¿½cksetzen
 	sta wait	
 	lda clocks				;Feinscroll?
 	beq hard				;Nein! => Hardscroll
 	dec clocks				;Feinscroll	
-	lda clocks				;clocks=3,2,1,0 => beim HerunterzŠhlen werden die Zeichen 		
+	lda clocks				;clocks=3,2,1,0 => beim Herunterzï¿½hlen werden die Zeichen 		
 	sta $d404				;nach links verschoben, pixelweise
-	ldx xr					;Register zurŸck schreiben
+	ldx xr					;Register zurï¿½ck schreiben
 	ldy yr					
 	jmp $e45f				;VBI verlassen
 hard	
-	lda #3					;Finescroll Register zurŸcksetzen					
+	lda #3					;Finescroll Register zurï¿½cksetzen					
 	sta $d404
 	sta clocks
 	
 	lda #19					;Anzahl der zu scrollenden Zeilen
 	sta lines
 	
-	lda #<(z0+1)			;Adresse fŸr den Inhalt der Zeile 0
+	lda #<(z0+1)			;Adresse fï¿½r den Inhalt der Zeile 0
 	sta zp					;in die Zeropage schreiben
 	lda #>(z0+1)
 	sta zp+1
@@ -322,7 +321,7 @@ s1
 	lda (zp),y				;Hole Zeilenadresse (High)
 	adc #0					;Carry- Flag dazu
 	sta (zp),y
-	iny						;Offset auf Adresse fŸr nŠchste Zeile
+	iny						;Offset auf Adresse fï¿½r nï¿½chste Zeile
 	iny						;verbiegen
 	dec lines				;Alle Zeilen durch?		
 	bne s1					;Nein!
@@ -330,16 +329,16 @@ s1
 	bne out					;nein!
 	
 	;
-	; Scrollbereich zurŸcksetzen auf Anfang
+	; Scrollbereich zurï¿½cksetzen auf Anfang
 	; Analog zur Routine in "Screeninit"
 	;
 	
 	lda #190				;ja!
-	sta blocks				;Anzahl der zu scrollenden Bildschirme zurŸcksetzen
+	sta blocks				;Anzahl der zu scrollenden Bildschirme zurï¿½cksetzen
 	
 	lda #<(adtab+1)			;Zeiger auf Adresstabelle		
 	sta zp2					;welche die Startadressen des Spielbildschirms
-	lda #>(adtab+1)			;enthŠlt in zp- Register 2
+	lda #>(adtab+1)			;enthï¿½lt in zp- Register 2
 	sta zp2+1
 	
 	lda #<(z0+1)			;Zeiger auf Bildadresse in Zeile 0		
@@ -557,7 +556,7 @@ cl1
 ;
 ; 3:Es wird bis Bildschirm 6 gescrollt
 ;
-; 4: Alle Bildschirme werden gelšscht, da nun der sowieso leere
+; 4: Alle Bildschirme werden gelï¿½scht, da nun der sowieso leere
 ; Bildschirm 6 angezeigt wird, merk das der Spieler nich :-)
 ;
 ; 5: Der Zeiger auf die Display-List wird auf Bildschirm 1 verbogen
@@ -572,7 +571,7 @@ screeninit
 
 	;
 	; Zeiger auf das Bild- Ram des Spielebildschirms, in der 
-	; Display- List fŸr den Spielebildschirm zurŸcksetzen.
+	; Display- List fï¿½r den Spielebildschirm zurï¿½cksetzen.
 	;
 
 	pha					; Save registers
@@ -718,7 +717,7 @@ set
 	lda zeichen
 	sta (zp),y
 	
-	ldx xr4							;Register zurŸck
+	ldx xr4							;Register zurï¿½ck
 	ldy yr4
 	
 	rts	
@@ -744,10 +743,10 @@ dli
 	;
 	
 	lda #>chset			;Nein!=> Wir sind also noch im Anzeigefeld 
-	sta $d409			;fŸr die Punkte
-	lda #5				;Farbe fŸr Gro§buchstaben Gr.1/2						
+	sta $d409			;fï¿½r die Punkte
+	lda #5				;Farbe fï¿½r Groï¿½buchstaben Gr.1/2						
 	sta colpf0s						
-	lda #20 			;Farbe fŸr Kleinbuchstaben Gr.1/2. Farbe fŸr Buchstaben Gr.0
+	lda #20 			;Farbe fï¿½r Kleinbuchstaben Gr.1/2. Farbe fï¿½r Buchstaben Gr.0
 	sta colpf1s
 	lda #116
 	sta colpf2s
@@ -759,7 +758,7 @@ dli
 
 dli1								
 	lda vcount			;Aktuelle Zeile < 38?
-	asl					;Wir sind also noch im Anzeigefeld fŸr
+	asl					;Wir sind also noch im Anzeigefeld fï¿½r
 	cmp #38				;die Punkte
 	bcc dlout			;=> nix tun
 
@@ -768,14 +767,14 @@ dli1
 	;
 												
 	lda #>chset12		;Nein: Wir sind im Spielfeldbereich	
-	sta $d409			;=>Spielfeldbereich einfŠrben.
-	lda #0				; FŸr Bit Kombi: 01
+	sta $d409			;=>Spielfeldbereich einfï¿½rben.
+	lda #0				; Fï¿½r Bit Kombi: 01
 	sta colpf0s										
-	lda #200			; FŸr Bit Kombi: 10
+	lda #200			; Fï¿½r Bit Kombi: 10
 	sta colpf1s
-	lda #14				; FŸr Bit Kombi: 11
+	lda #14				; Fï¿½r Bit Kombi: 11
 	sta colpf2s
-	lda #255			;FŸr die inversen Zeichen=Farbe 5
+	lda #255			;Fï¿½r die inversen Zeichen=Farbe 5
 	sta colpf3s
 
 	; Draw sky
@@ -824,7 +823,7 @@ dlout
 ; Aktuellen Punktestand ausgeben
 ; 
 ; Aufruf: 
-; delta= Anzahl der Punkte, um die der ZŠhler erhšt werden soll
+; delta= Anzahl der Punkte, um die der Zï¿½hler erhï¿½t werden soll
 ;
 
 points
@@ -900,7 +899,7 @@ ss
 
 ;
 ; CLSCORE
-; Punktestand lšschen
+; Punktestand lï¿½schen
 ;
 
 clscor
@@ -949,7 +948,7 @@ gr1		equ $06					; Gr. 1
 gr12	equ $14					; Gr. 12 mit Horizontalem Scrolling
 
 	;
-	; Display- List und Bilddaten fŸr den Titelbildschirm
+	; Display- List und Bilddaten fï¿½r den Titelbildschirm
 	;
 
 dltitel							;Titel Screen
@@ -964,7 +963,7 @@ titel
 	.byte "   press <START>    "
 	
 	;
-	; Display- List fŸr den Spielebildschirm
+	; Display- List fï¿½r den Spielebildschirm
 	;
 	org $1000
 	
@@ -1018,7 +1017,7 @@ message
 m1
 	.byte "    GAME OVER       "
 	
-	; Rahmen fŸr die Punkteanzeige
+	; Rahmen fï¿½r die Punkteanzeige
 	
 ln1	.byte $51,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52
 	.byte $52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$45
@@ -1031,7 +1030,7 @@ ln2 .byte $5a,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$5
 	; Startzustand.
 	;
 	; Das muss hier gesichert werden, weil, die Zeiger auf den
-	; Bildspeicher in den zu scrollenden Zeilen verŠndert werden
+	; Bildspeicher in den zu scrollenden Zeilen verï¿½ndert werden
 	; damit es scrollt :-)
 	;
 
