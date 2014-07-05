@@ -2,7 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 5.7.2014
+; BF 30.6.2014
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -90,7 +90,7 @@ CONSOL	EQU 53279
 ; Start
 ;
 
-	org 1792
+	org 40960
 	jmp titelscr
 kill
 	.byte 0
@@ -125,9 +125,9 @@ st
 ;
 
 begin
-	jsr screeninit		; Game- screen init (draw playfield, init antic- program)
-	jsr clscor			; Clear old score
-	jsr showscor		; Show score
+	jsr screeninit			; Game- screen init (draw playfield, init antic- program)
+	jsr clscor				; Clear old score
+	jsr showscor			; Show score
 
 	lda #0				; Bird is alive!
 	sta kill
@@ -140,19 +140,19 @@ begin
 	lda #50				; Bird will apear at line 50 on the screen
 	sta ypos
 
-	lda #<dli   		; Display- List- Interrupt on
+	lda #<dli   			; Display- List- Interrupt on
 	sta vdlist
 	lda #>dli
 	sta vdlist+1
 	lda #$C0
 	sta NMIEN
 	
-	lda #<dlgame		; Show playfield		
+	lda #<dlgame			; Show playfield		
 	sta dlptr						
 	lda #>dlgame
 	sta dlptr+1
 	
-	lda #<message		; Show message below score, just for fun
+	lda #<message			; Show message below score, just for fun
 	sta msg+1
 	lda #>message
 	sta msg+2
@@ -164,7 +164,7 @@ wt
 	
 	lda #0				; Init frame- counter for bird animation
 	sta frame
-	ldy #<movebird		; Activate deffered VBI for player (bird) movement
+	ldy #<movebird			; Activate deffered VBI for player (bird) movement
 	ldx #>movebird				
 	lda #7
 	jsr $e45c
@@ -176,7 +176,7 @@ wt
 	lda #200			;40 x 6 =240 Bytes = 6 Bildschimre 
 	sta blocks   		;werden gescrollt, danach alles von Vorne :-)
 	
-	ldy #<scroll		;Scroll Routine im Immediate VBI
+	ldy #<scroll			;Scroll Routine im Immediate VBI
 	ldx #>scroll
 	lda #6
 	jsr $e45c	
@@ -187,13 +187,13 @@ wt
 
 main							
 	lda seqend			;Scroll sequence end?
-	beq scrollon		;No, scroll on=> VBI remains on!
+	beq scrollon			;No, scroll on=> VBI remains on!
 	
 	;
 	; Stop scrolling and init new playfield
 	;
 
-	;ldy #<vbi_imm_off	;VBI off
+	;ldy #<vbi_imm_off		 ;VBI off
 	;ldx #>vbi_imm_off	
 	;lda #6						
 	;jsr $e45c
@@ -203,7 +203,7 @@ main
 	lda #0				; Message=> scrolling enabeled
 	sta seqend
 	
-	;ldy #<scroll		; start scroll routine
+	;ldy #<scroll			; start scroll routine
 	;ldx #>scroll
 	;lda #6
 	;jsr $e45c
@@ -215,26 +215,26 @@ incsc
 	jsr score
 	jsr showscor	
 	jsr wtt
-	lda kill			; We are in a loop an scrolling is
-	cmp #1				; running again, so we have to check, if 
-	beq death			; 'scroll' send us a message via kill- flag
-	dex					; if so, jumpt to death routine :(
+	lda kill				; We are in a loop an scrolling is
+	cmp #1					; running again, so we have to check, if 
+	beq death				; 'scroll' send us a message via kill- flag
+	dex						; if so, jumpt to death routine :(
 	bne incsc
 
 scrollon
-	lda kill			; Bird still alive? We have to check for death- message from
-	beq notdeath		; scroll  routine. Has our bird died? =>kill=0 means no
+	lda kill				; Bird still alive? We have to check for death- message from
+	beq notdeath			; scroll  routine. Has our bird died? =>kill=0 means no
 
 	lda kill			;Bird still alive?
 	cmp #1
-	bne notdeath		;Yes
+	bne notdeath			;Yes
 	;
 	; Death Code
 	;
 
 death
-	ldy #<vbi_imm_off	; Bird is death!
-	ldx #>vbi_imm_off	; Stop bird movement= Bird VBI
+	ldy #<vbi_imm_off		; Bird is death!
+	ldx #>vbi_imm_off		; Stop bird movement= Bird VBI
 	lda #6				; VBI is now re- routet
 	jsr $e45c
 	
@@ -244,8 +244,8 @@ death
 	jsr $e45c
 gover	
 
-	lda #<m1			; Inform player that he has just died
-	sta msg+1			; (in case he won't belive)
+	lda #<m1				; Inform player that he has just died
+	sta msg+1				; (in case he won't belive)
 
 	lda #<m1			; Inform the player that he has just died
 	sta msg+1			; (in case he won't belive)
@@ -257,7 +257,7 @@ trig
 	cmp #6
 	bne trig
 	
-	jmp titelscr		; Show titel = > this game is over!	
+	jmp titelscr			; Show titel = > this game is over!	
 	
 notdeath						
 	jmp main			; Bird is alive. Repeat main loop
@@ -274,77 +274,83 @@ vbi_deff_off
 ;
 ; Do Scroll => Immidiate VBI
 ;
+; Es kann eine (nahezu) beliebige Anzahl Zeilen, horizontal, verschoben werden
+; Da der Offset auf die Zeilenadressen in der Display List - das Y- Register - 
+; nur 8- Bit breit ist, und die Zeilenadresse aus 2 Bytes besteht, sind maximal
+; 256/2= 128 Zeilen mï¿½glich.... 
+;
 ; Zero Page: zp
 ;			 zp2
 ;
 
 lines	
-	.byte 0				; Number of rows to be scrolled
+	.byte 0					;Ablage fï¿½r Anzahl der Zeilen, die gescrollt werden
 blocks
-	.byte 0				; Blocks= One TV- Screen in Gr. 12 mode= 40 Bytes x 20 rows
+	.byte 0					;Ablage fï¿½r die Anzahl der Bildschirme die gescrollt werden
 clocks
-	.byte 0				; Finescroll, number of color clocks
+	.byte 0					;Finescroll, Anzahl der Color Clocks um die geschoben werden soll
 
-xr	.byte 0				; Save place for our registers
+xr	.byte 0					;Sicherer Platz fï¿½r Register
 yr	.byte 0
 a	.byte 0
 
 scroll
-	stx xr			; Save registers
+	stx xr
 	sty yr
 	sta a
 
-	dec wait		; Wait= the bigger, the slower our screen scrolls
-	beq s11			; Do scrolling		
-	ldx xr			; Dont't scroll
-	ldy yr			; Get registers back
-	lda a			; and
-	jmp $e462		; Leave VBI 
+	dec wait				;wait gibt an wie oft scroll aufgerufen werden
+	beq s11					;muss, damit einmal gescrollt werden wird
+	ldx xr					;wait <>0=> zurï¿½ck, nicht scrollen!
+	ldy yr					;Register zurï¿½ck schreiben
+	jmp $e462				;VBI verlassen
 s11
-	lda #1			; Reset wait
+	lda #1					;wait zurï¿½cksetzen
 	sta wait	
-	lda clocks		;Feinscroll?
-	beq hard		;Nein! => Hardscroll
-	dec clocks		;Feinscroll	
-	lda clocks		;clocks=3,2,1,0 => beim Herunterzï¿½hlen werden die Zeichen 		
-	sta $d404		;nach links verschoben, pixelweise
-	ldx xr			;Register zurï¿½ck schreiben
+	lda clocks				;Feinscroll?
+	beq hard				;Nein! => Hardscroll
+	dec clocks				;Feinscroll	
+	lda clocks				;clocks=3,2,1,0 => beim Herunterzï¿½hlen werden die Zeichen 		
+	sta $d404				;nach links verschoben, pixelweise
+	ldx xr					;Register zurï¿½ck schreiben
 	ldy yr					
-	jmp $e45f		;VBI verlassen
+	jmp $e45f				;VBI verlassen
 hard	
-	lda #3			;Finescroll Register zurï¿½cksetzen					
+	lda #3					;Finescroll Register zurï¿½cksetzen					
 	sta $d404
 	sta clocks
 	
-	lda #19			;Anzahl der zu scrollenden Zeilen
+	lda #19					;Anzahl der zu scrollenden Zeilen
 	sta lines
 	
-	lda #<(z0+1)	;Adresse fï¿½r den Inhalt der Zeile 0
-	sta zp			;in die Zeropage schreiben
+	lda #<(z0+1)			;Adresse fï¿½r den Inhalt der Zeile 0
+	sta zp					;in die Zeropage schreiben
 	lda #>(z0+1)
 	sta zp+1
+	
 	ldy #0
 s1	
 	clc					
-	lda (zp),y		;Hole Zeilenadresse (Low)
-	adc #1			;Eins dazu
+	lda (zp),y				;Hole Zeilenadresse (Low)
+	adc #1					;Eins dazu
 	sta (zp),y				
 	iny
-	lda (zp),y		;Hole Zeilenadresse (High)
-	adc #0			;Carry- Flag dazu
+	lda (zp),y				;Hole Zeilenadresse (High)
+	adc #0					;Carry- Flag dazu
 	sta (zp),y
-	iny				;Offset auf Adresse fï¿½r nï¿½chste Zeile
-	iny				;verbiegen
-	dec lines		;Alle Zeilen durch?		
-	bne s1			;Nein!
-	dec blocks		;Alle Bildschirme durch?
-	bne out			;nein!
+	iny						;Offset auf Adresse fï¿½r nï¿½chste Zeile
+	iny						;verbiegen
+	dec lines				;Alle Zeilen durch?		
+	bne s1					;Nein!
+	dec blocks				;Alle Bildschirme durch?
+	bne out					;nein!
 	
 	;
 	; Scrollbereich zurï¿½cksetzen auf Anfang
 	; Analog zur Routine in "Screeninit"
 	;
 	
+
 	lda #200				;ja!
 	sta blocks				;Anzahl der zu scrollenden Bildschirme zurŸcksetzen
 
@@ -358,7 +364,7 @@ s1
 	lda #>(z0+1)			;bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #20					;20 Zeilen
+	ldx #19					;20 Zeilen
 	ldy #0
 lll01
 	lda (zp2),y				;low- Byte
@@ -381,7 +387,7 @@ out
 	jmp $e45f		;VBI verlassen
 
 ;
-; Init PM- Graphics
+; PM- Grafik initialisieren
 ;
 	
 pminit
@@ -461,7 +467,7 @@ frame
 ypos	
 	.byte 30				; Birds y- pos
 	
-xrr	.byte 0					; Save place for our registers
+xrr	.byte 0					; Memory for our registers
 yrr	.byte 0
 
 waitc
@@ -629,10 +635,11 @@ lll0
 	lda #>screen
 	sta zp6+1
 	
-	lda #20				; Max number of rows/ screen
+	lda #maxlin			; Max number of rows/ screen
 	sta zeile
+
 ll0	
-	ldx #240			; Bytes/ row
+	ldx #239			; Bytes/ row
 	ldy #0				; Offset for zero page pointer
 ll1
 	lda #0				; Clear row
@@ -640,9 +647,10 @@ ll1
 	iny
 	dex
 	bne ll1				; Row done= clear?
-	clc					; Yes, Calc adress for next row
+	dey					; Yes!
+	clc					; Calc adress for next row
 	lda zp6
-	adc #240
+	adc #239
 	sta zp6
 	lda zp6+1
 	adc #0
@@ -655,18 +663,23 @@ ll1
 	; Draw Obstacles
 	;
 
-	ldx #5
-	ldy #2
+	ldx #30
+	ldy #5
 	lda #4
 	jsr plot
 	
+	ldx #230
+	ldy #5
+	lda #4
+	jsr plot
+
 	ldx #0
 	ldy #0
 	lda #5
 lli
 	jsr plot
 	inx
-	cpx #236
+	cpx #239
 	bne lli
 	
 	ldx #0
@@ -675,7 +688,7 @@ lli
 lli1
 	inx
 	jsr plot
-	cpx #200
+	cpx #239
 	bne lli1
 	
 	ldx #0
@@ -961,7 +974,7 @@ ww1
 	pla
 	
 	rts
-	
+
 ;
 ; Game Screen/ Titel usw.
 ;
@@ -990,10 +1003,10 @@ titel
 	;
 	org $1000
 	
-bytes	equ 240				;Bytes je Zeile
+bytes	equ 239				;Bytes je Zeile
 
-dlgame						;Game Screen						
-	.byte $70+128			;Leer
+dlgame							;Game Screen						
+	.byte $70+128				;Leer
 
 	; Jede Zeile hat 40 Bytes= 40 Zeichen
 	; Das Spielfeld besteht aus 6 Bildschirmen
@@ -1039,6 +1052,14 @@ message
 	.byte "FLY LITTLE BIRD..   "
 m1
 	.byte "    GAME OVER       "
+	
+	; Rahmen fï¿½r die Punkteanzeige
+	
+ln1	.byte $51,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52
+	.byte $52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$45
+	
+ln2 .byte $5a,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52
+	.byte $52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$52,$43
 	
 	;
 	; Adress- Tabelle Spielebildschirm, Scrollzeilen
@@ -1163,16 +1184,15 @@ chset12
 :8		.byte 85															; Solid black block			//6		
 		.byte 85	,	85	,	85	,	85	,	85	,	101	,	166	,	170 ; Solid black block, bottom //7
 							
+		
+
+
 ;
 ; Bildspeicher Spielebildschirm
 ;
-
-screen
-	org 18000 
-
-
-
-
+	
+screen								; Game Screen Data						
+	org 20000
 
 
 
