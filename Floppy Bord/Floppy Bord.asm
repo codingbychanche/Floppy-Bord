@@ -106,8 +106,6 @@ seqend
 titelscr
 	jsr clpm				; Clear player 0 
 
-	jsr clpm			; Clear player 0 
-
 	lda #<dltitel			; Show titel screen
 	sta dlptr	
 	lda #>dltitel
@@ -173,7 +171,7 @@ wt
 	sta wait
 	lda #3				; Color clocks for fine scroll
 	sta clocks
-	lda #200			;40 x 6 =240 Bytes = 6 Bildschimre 
+	lda #184			;48 x 5 =240 Bytes = 5 Bildschimre 
 	sta blocks   		;werden gescrollt, danach alles von Vorne :-)
 	
 	ldy #<scroll		;Scroll Routine im Immediate VBI
@@ -190,23 +188,13 @@ main
 	beq scrollon		;No, scroll on=> VBI remains on!
 	
 	;
-	; Stop scrolling and init new playfield
+	; Init new playfield
 	;
-
-	;ldy #<vbi_imm_off	;VBI off
-	;ldx #>vbi_imm_off	
-	;lda #6						
-	;jsr $e45c
 	
 	jsr screeninit
 	
 	lda #0				; Message=> scrolling enabeled
 	sta seqend
-	
-	;ldy #<scroll		; start scroll routine
-	;ldx #>scroll
-	;lda #6
-	;jsr $e45c
 	
 	ldx #100
 incsc
@@ -324,9 +312,9 @@ hard
 	lda #>(z0+1)
 	sta zp+1
 	ldy #0
-s1	
-	clc					
+s1					
 	lda (zp),y		;Hole Zeilenadresse (Low)
+	clc
 	adc #1			;Eins dazu
 	sta (zp),y				
 	iny
@@ -345,7 +333,7 @@ s1
 	; Analog zur Routine in "Screeninit"
 	;
 	
-	lda #200				;ja!
+	lda #184				;ja!
 	sta blocks				;Anzahl der zu scrollenden Bildschirme zurŸcksetzen
 
 	lda #<(adtab+1)			;Zeiger auf Adresstabelle		
@@ -515,7 +503,6 @@ skip2
 	beq eee					; in that case, do nothing
 	dec ypos				; Below max heigth, increase y- pos => move bird higher
 	jmp eee					; skip downward movement
-	
 down	
 	inc ypos				; Trigger not pressed, move bird lower
 	lda ypos
@@ -556,12 +543,12 @@ cl1
 ; Game- Screen initialization
 ;
 ; Prinzip:
-; Wir haben insgesammt 6 Spielebildschirme die endlos gescrollt werden und nach jedem
+; Wir haben insgesammt 5 Spielebildschirme die endlos gescrollt werden und nach jedem
 ; Durchgang neu gezeichnet werden
 ;
-; +---+---+---+---+---+---+  
-; | 1 | 2 | 3 | 4 | 5 | 6 |   => Spielebildschirme
-; +--+---+---+---+---+---+
+; +---+---+---+---+---+ 
+; | 1 | 2 | 3 | 4 | 5 |   => Spielebildschirme
+; +--+---+---+---+---+
 ;
 ; 1:Startbedingung: Bildschirm 1 und 6 sind leer
 ; 
@@ -571,7 +558,7 @@ cl1
 ; 3:Es wird bis Bildschirm 6 gescrollt
 ;
 ; 4: Alle Bildschirme werden gelï¿½scht, da nun der sowieso leere
-; Bildschirm 6 angezeigt wird, merk das der Spieler nich :-)
+; Bildschirm 5 angezeigt wird, merk das der Spieler nich :-)
 ;
 ; 5: Der Zeiger auf die Display-List wird auf Bildschirm 1 verbogen
 ;
@@ -583,108 +570,147 @@ cl1
 
 zeile
 	.byte 0
+	
+	dummy	equ 0							;Platzhalter
+	
+adtab
+	.byte dummy,a(screen)				; Row 1
+	.byte dummy,a(screen+1*bytes)
+	.byte dummy,a(screen+2*bytes)
+	.byte dummy,a(screen+3*bytes)
+	.byte dummy,a(screen+4*bytes)
+	.byte dummy,a(screen+5*bytes)
+	.byte dummy,a(screen+6*bytes)
+	.byte dummy,a(screen+7*bytes)
+	.byte dummy,a(screen+8*bytes)
+	.byte dummy,a(screen+9*bytes)
+	.byte dummy,a(screen+10*bytes)
+	.byte dummy,a(screen+11*bytes)
+	.byte dummy,a(screen+12*bytes)
+	.byte dummy,a(screen+13*bytes)
+	.byte dummy,a(screen+14*bytes)
+	.byte dummy,a(screen+15*bytes)
+	.byte dummy,a(screen+16*bytes)
+	.byte dummy,a(screen+17*bytes)
+	.byte dummy,a(screen+18*bytes)
+	.byte dummy,a(screen+19*bytes)		; Row 20
 
 screeninit	
 
 	;
-	; Zeiger auf das Bild- Ram des Spielebildschirms, in der 
-	; Display- List fï¿½r den Spielebildschirm zurï¿½cksetzen.
-	;
+	; Reset Playfield= Begin scrolling at screen 1
+	; To do this, we change the screen- ram adresses in our display list
+	; line by line by replacing them with our in "adtab" saved adresses
+	; 
 
-	pha					; Save registers
+	pha				; Save registers
 	txa
 	pha
 	tya
 	pha
 
-	lda #<(adtab+1)		; Pointer to adress table containing
-	sta zp5				; adresses of lines in screen ram of 
-	lda #>(adtab+1)		; first screen
+	lda #<(adtab+1)	; Pointer to adress table containing
+	sta zp5			; adresses of lines in screen ram of 
+	lda #>(adtab+1)	; first screen
 	sta zp5+1
 	
-	lda #<(z0+1)		; Zeiger auf Bildadresse in Zeile 0		
-	sta zp6				; der Display- List des Spiele-
-	lda #>(z0+1)		; bildschirms in zp- Register 1
+	lda #<(z0+1)	; Zeiger auf Bildadresse in Zeile 0		
+	sta zp6			; der Display- List des Spiele-
+	lda #>(z0+1)	; bildschirms in zp- Register 1
 	sta zp6+1
 
-	ldx #19				;20 Zeilen
+	ldx #19			; 20 rows
 	ldy #0
 lll0
-	lda (zp5),y			;low- Byte
+	lda (zp5),y		;low- Byte
 	sta (zp6),y
 	iny
-	lda (zp5),y			;High- Byte
+	lda (zp5),y		;High- Byte
 	sta (zp6),y
 	iny
 	iny
 	dex
-	bne lll0			;Alle Adressen?
+	bne lll0		; All rows?
 
 	;
-	; Clear Playfield
+	; Clear screen 2,3,4
+	; That way the player wont't notice that anythig happens on the screen.
+	; Reason: Screen 5 is displayed, we don't change anything here
+	; All other changes happen on screens which are not displayed
 	;
-	
-	lda #<screen		; Pointer on screen RAM
-	sta zp6				; Store in zero page
+	; Screen 2 starts at x = 60 that is because we change our screnns while scrolling!
+	; We have to hurry ahead => do changes before they apear on the vissible part
+	; of our screen.
+	;
+
+	lda #<screen	; Pointer on screen RAM
+	sta zp6			; Store in zero page
 	lda #>screen
 	sta zp6+1
 	
-	lda #20				; Max number of rows/ screen
-	sta zeile
-ll0	
-	ldx #240			; Bytes/ row
-	ldy #0				; Offset for zero page pointer
-ll1
-	lda #0				; Clear row
-	sta (zp6),y
-	iny
-	dex
-	bne ll1				; Row done= clear?
-	clc					; Yes, Calc adress for next row
-	lda zp6
-	adc #240
-	sta zp6
-	lda zp6+1
-	adc #0
-	sta zp6+1
+	ldy #0
+cll1
+	ldx #192		; Here begins screen #5
+cll2
+	lda #0			; That's the char we plot= blank
+	jsr plot		; Do plot
+	dex				; Count backwards
+	cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
+	bne cll2		; Next x- pos
+	iny				; Next row
+	cpy #20			; Until all 20 rows are done
+	bne cll1	
 	
-	dec zeile					
-	bne ll0				; All Lines?						
-
 	;
 	; Draw Obstacles
 	;
 
-	ldx #5
-	ldy #2
-	lda #4
+	ldx #4
+	ldy #5
+	lda #5
 	jsr plot
 	
-	ldx #0
+	ldx #188
+	ldy #5
+	lda #5
+	jsr plot
+	
+	
+	ldx #10
+	ldy #8
+	lda #5
+	jsr plot
+	
+	ldx #194
+	ldy #8
+	lda #5
+	jsr plot
+	
+	ldx #3
 	ldy #0
 	lda #5
 lli
 	jsr plot
 	inx
-	cpx #236
+	cpx #240
 	bne lli
 	
-	ldx #0
+	ldx #3
 	ldy #1
 	lda #2
 lli1
-	inx
 	jsr plot
-	cpx #200
+	inx
+	cpx #240
 	bne lli1
 	
-	ldx #0
-	ldy #19
+	ldx #3
+	ldy #18
 	lda #7
 lli2
 	jsr plot
 	inx
-	cpx #239
+	cpx #240
 	bne lli2
 	
 	pla				; Get registers back
@@ -723,8 +749,8 @@ plot
 	cpy #0							;Y=0, trivial, Zeichen an Pos. x ausgeben
 	beq set		
 p1	
-	clc								;Y!=0, Zeilenadresse berechnen
 	lda zp6
+	clc
 	adc #bytes
 	sta zp6
 	lda zp6+1
@@ -1039,39 +1065,6 @@ message
 	.byte "FLY LITTLE BIRD..   "
 m1
 	.byte "    GAME OVER       "
-	
-	;
-	; Adress- Tabelle Spielebildschirm, Scrollzeilen
-	; Startzustand.
-	;
-	; Das muss hier gesichert werden, weil, die Zeiger auf den
-	; Bildspeicher in den zu scrollenden Zeilen verï¿½ndert werden
-	; damit es scrollt :-)
-	;
-
-dummy	equ 0							;Platzhalter
-	
-adtab
-	.byte dummy,a(screen)				; Zeile 1
-	.byte dummy,a(screen+1*bytes)
-	.byte dummy,a(screen+2*bytes)
-	.byte dummy,a(screen+3*bytes)
-	.byte dummy,a(screen+4*bytes)
-	.byte dummy,a(screen+5*bytes)
-	.byte dummy,a(screen+6*bytes)
-	.byte dummy,a(screen+7*bytes)
-	.byte dummy,a(screen+8*bytes)
-	.byte dummy,a(screen+9*bytes)
-	.byte dummy,a(screen+10*bytes)
-	.byte dummy,a(screen+11*bytes)
-	.byte dummy,a(screen+12*bytes)
-	.byte dummy,a(screen+13*bytes)
-	.byte dummy,a(screen+14*bytes)
-	.byte dummy,a(screen+15*bytes)
-	.byte dummy,a(screen+16*bytes)
-	.byte dummy,a(screen+17*bytes)
-	.byte dummy,a(screen+18*bytes)
-	.byte dummy,a(screen+19*bytes)		;Zeile 20
 	
 ;
 ; Zeichensatz Daten
