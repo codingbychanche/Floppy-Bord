@@ -104,14 +104,14 @@ seqend
 ;
 
 titelscr
-	jsr clpm				; Clear player 0 
+	jsr clpm			; Clear player 0 
 
-	lda #<dltitel			; Show titel screen
+	lda #<dltitel		; Show titel screen
 	sta dlptr	
 	lda #>dltitel
 	sta dlptr+1
 
-	lda #>chset				; Activate char set for graphics 0,1,2
+	lda #>chset			; Activate char set for graphics 0,1,2
 	sta 756
 st
 	lda consol			; Now wait until the start key is pressed
@@ -156,6 +156,12 @@ begin
 	sta msg+2
 	
 	jsr pminit			; Init sprites
+
+	lda #3				; Init Pokey
+	sta $d20f			; SKCTL
+	lda #0		 
+	sta $d208			; AUDCTL
+
 wt
 	lda 644				; Wait for trigger
 	bne wt
@@ -208,7 +214,6 @@ incsc
 	beq death			; 'scroll' send us a message via kill- flag
 	dex					; if so, jumpt to death routine :(
 	bne incsc
-
 scrollon
 	lda kill			; Bird still alive? We have to check for death- message from
 	beq notdeath		; scroll  routine. Has our bird died? =>kill=0 means no
@@ -216,6 +221,7 @@ scrollon
 	lda kill			;Bird still alive?
 	cmp #1
 	bne notdeath		;Yes
+
 	;
 	; Death Code
 	;
@@ -226,23 +232,34 @@ death
 	lda #6				; VBI is now re- routet
 	jsr $e45c
 	
-	ldy #<vbi_deff_off
+	ldy #<vbi_deff_off	; Same for deffered VBI
 	ldx #>vbi_deff_off
 	lda #7
 	jsr $e45c
+
+	lda #%10000111		; BOOOOM- sound :-)
+	sta $d201			; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
+	lda #25				; Freq.
+	sta $d200			; AUDF1
+	
+	ldx #16
+deathsound				; Play sound
+	txa
+	and $d201
+	sta $d201
+	jsr wtt
+	dex
+	bne deathsound
+	
+	lda #0				; Silent!
+	sta $d201	
 gover	
-
-	lda #<m1			; Inform player that he has just died
-	sta msg+1			; (in case he won't belive)
-
 	lda #<m1			; Inform the player that he has just died
 	sta msg+1			; (in case he won't belive)
-
 	lda #>m1
 	sta msg+2
 trig	
-	lda	consol			; Wait for start key
-	cmp #6
+	lda	644				; Wait for trigger key
 	bne trig
 	
 	jmp titelscr		; Show titel = > this game is over!	
@@ -267,13 +284,13 @@ vbi_deff_off
 ;
 
 lines	
-	.byte 0				; Number of rows to be scrolled
+	.byte 0			; Number of rows to be scrolled
 blocks
-	.byte 0				; Blocks= One TV- Screen in Gr. 12 mode= 40 Bytes x 20 rows
+	.byte 0			; Blocks= One TV- Screen in Gr. 12 mode= 40 Bytes x 20 rows
 clocks
-	.byte 0				; Finescroll, number of color clocks
+	.byte 0			; Finescroll, number of color clocks
 
-xr	.byte 0				; Save place for our registers
+xr	.byte 0			; Save place for our registers
 yr	.byte 0
 a	.byte 0
 
@@ -304,7 +321,7 @@ hard
 	sta $d404
 	sta clocks
 	
-	lda #19			;Anzahl der zu scrollenden Zeilen
+	lda #15			;Anzahl der zu scrollenden Zeilen
 	sta lines
 	
 	lda #<(z0+1)	;Adresse fï¿½r den Inhalt der Zeile 0
@@ -333,26 +350,26 @@ s1
 	; Analog zur Routine in "Screeninit"
 	;
 	
-	lda #184				;ja!
-	sta blocks				;Anzahl der zu scrollenden Bildschirme zurŸcksetzen
+	lda #184		;ja!
+	sta blocks		;Anzahl der zu scrollenden Bildschirme zurŸcksetzen
 
-	lda #<(adtab+1)			;Zeiger auf Adresstabelle		
-	sta zp2					;welche die Startadressen des Spielbildschirms
-	lda #>(adtab+1)			;enthï¿½lt in zp- Register 2
+	lda #<(adtab+1)	;Zeiger auf Adresstabelle		
+	sta zp2			;welche die Startadressen des Spielbildschirms
+	lda #>(adtab+1)	;enthï¿½lt in zp- Register 2
 	sta zp2+1
 	
-	lda #<(z0+1)			;Zeiger auf Bildadresse in Zeile 0		
-	sta zp					;der Display- List des Spiele-
-	lda #>(z0+1)			;bildschirms in zp- Register 1
+	lda #<(z0+1)	;Zeiger auf Bildadresse in Zeile 0		
+	sta zp			;der Display- List des Spiele-
+	lda #>(z0+1)	;bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #20					;20 Zeilen
+	ldx #20			;20 Zeilen
 	ldy #0
 lll01
-	lda (zp2),y				;low- Byte
+	lda (zp2),y		;low- Byte
 	sta (zp),y
 	iny
-	lda (zp2),y				;High- Byte
+	lda (zp2),y		;High- Byte
 	sta (zp),y
 	iny
 	iny
@@ -485,13 +502,16 @@ l12
 	
 	lda #2					; =0 => Reset 'waitc'	and go on
 	sta waitc
+	lda #0					; Sound off
+	sta $d201
 	
 	lda 644					; Get trigger
 	bne down				; Not presssed? Bird loses altitute :-)
 
-	lda frame				; Trigger pressed?=> Already 3 frames shown?
+	lda frame				; Trigger pressed! Already 3 frames shown?
 	cmp #3					
 	bne skip				; No, next frame
+
 	lda #0					; Yes, reset frame- counter
 	sta frame
 	jmp skip2				; Now, dont increase framecounter, skip it
@@ -639,7 +659,7 @@ lll0
 	; All other changes happen on screens which are not displayed
 	;
 	; Screen 2 starts at x = 60 that is because we change our screnns while scrolling!
-	; We have to hurry ahead => do changes before they apear on the vissible part
+	; We have to hurry ahead => do changes before they apear on the visible part
 	; of our screen.
 	;
 
@@ -971,9 +991,9 @@ wtt
 	tya
 	pha
 
-	ldx #100
+	ldx #30
 ww0	
-	ldy #100
+	ldy #200
 ww1	
 	dey
 	bne ww1

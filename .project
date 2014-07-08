@@ -8,4 +8,11 @@
 	</buildSpec>
 	<natures>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>Sound</name>
+			<type>2</type>
+			<location>/Users/Berthold/Documents/6502 Programming/Sound</location>
+		</link>
+	</linkedResources>
 </projectDescription>
