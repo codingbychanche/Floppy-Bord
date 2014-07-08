@@ -2,7 +2,7 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 5.7.2014
+; BF 8.7.2014
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -130,9 +130,6 @@ begin
 	lda #0				; Bird is alive!
 	sta kill
 	
-	lda #0				; Enable collison (clear collision registers)
-	sta 53278
-	
 	lda #0
 	sta seqend				
 	lda #50				; Bird will apear at line 50 on the screen
@@ -214,7 +211,8 @@ incsc
 	beq death			; 'scroll' send us a message via kill- flag
 	dex					; if so, jumpt to death routine :(
 	bne incsc
-scrollon
+
+scrollon	
 	lda kill			; Bird still alive? We have to check for death- message from
 	beq notdeath		; scroll  routine. Has our bird died? =>kill=0 means no
 
@@ -298,6 +296,9 @@ scroll
 	stx xr			; Save registers
 	sty yr
 	sta a
+	
+	lda #0			; Enable collison (clear collision registers)
+	sta 53278
 
 	dec wait		; Wait= the bigger, the slower our screen scrolls
 	beq s11			; Do scrolling		
@@ -702,6 +703,16 @@ cll2
 	jsr plot
 	
 	ldx #194
+	ldy #8
+	lda #5
+	jsr plot
+	
+	ldx #61
+	ldy #10
+	lda #5
+	jsr plot
+	
+	ldx #100
 	ldy #8
 	lda #5
 	jsr plot
