@@ -130,6 +130,9 @@ begin
 	lda #0				; Bird is alive!
 	sta kill
 	
+	lda #9	
+	sta $d01e			; Clear all collision registers		
+	
 	lda #0
 	sta seqend				
 	lda #50				; Bird will apear at line 50 on the screen
@@ -186,7 +189,12 @@ wt
 ; Main Loop
 ;
 
-main							
+main	
+	lda $d004			; Check collision Player 0 (our bir)
+	beq next			; with background of playfield
+	lda #1				; Collision!=> kill bird
+	sta kill				
+next							
 	lda seqend			;Scroll sequence end?
 	beq scrollon		;No, scroll on=> VBI remains on!
 	
@@ -215,10 +223,6 @@ incsc
 scrollon	
 	lda kill			; Bird still alive? We have to check for death- message from
 	beq notdeath		; scroll  routine. Has our bird died? =>kill=0 means no
-
-	lda kill			;Bird still alive?
-	cmp #1
-	bne notdeath		;Yes
 
 	;
 	; Death Code
@@ -298,7 +302,7 @@ scroll
 	sta a
 	
 	lda #0			; Enable collison (clear collision registers)
-	sta 53278
+	sta $d01e
 
 	dec wait		; Wait= the bigger, the slower our screen scrolls
 	beq s11			; Do scrolling		
@@ -309,50 +313,50 @@ scroll
 s11
 	lda #1			; Reset wait
 	sta wait	
-	lda clocks		;Feinscroll?
-	beq hard		;Nein! => Hardscroll
-	dec clocks		;Feinscroll	
-	lda clocks		;clocks=3,2,1,0 => beim Herunterzï¿½hlen werden die Zeichen 		
-	sta $d404		;nach links verschoben, pixelweise
-	ldx xr			;Register zurï¿½ck schreiben
+	lda clocks		; Fine Scroll?
+	beq hard		; No! Do hard scroll
+	dec clocks		; Do fine scroll	
+	lda clocks		; Colocks=3,2,1 counting down this values scrolls		
+	sta $d404		; character to the left
+	ldx xr			; Write regsiters back
 	ldy yr					
-	jmp $e45f		;VBI verlassen
+	jmp $e45f		; Leave VBI
 hard	
-	lda #3			;Finescroll Register zurï¿½cksetzen					
-	sta $d404
-	sta clocks
+	lda #3			; Reset fine scroll register				
+	sta $d404		; after chracter was moved to it's leftmost position and
+	sta clocks		
 	
-	lda #15			;Anzahl der zu scrollenden Zeilen
+	lda #18			; We scroll 15 rows of our playfield
 	sta lines
 	
-	lda #<(z0+1)	;Adresse fï¿½r den Inhalt der Zeile 0
-	sta zp			;in die Zeropage schreiben
+	lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
+	sta zp			; of line 0 of playfield (complicated? :-) Noooooooooo, just bad english :-(
 	lda #>(z0+1)
 	sta zp+1
 	ldy #0
 s1					
-	lda (zp),y		;Hole Zeilenadresse (Low)
+	lda (zp),y		; Get adress of row (Low)
 	clc
-	adc #1			;Eins dazu
+	adc #1			; add => move row to the left => hardscroll
 	sta (zp),y				
 	iny
-	lda (zp),y		;Hole Zeilenadresse (High)
-	adc #0			;Carry- Flag dazu
+	lda (zp),y		; Get adress of row (High)
+	adc #0			; Add contents of carry flag
 	sta (zp),y
-	iny				;Offset auf Adresse fï¿½r nï¿½chste Zeile
-	iny				;verbiegen
-	dec lines		;Alle Zeilen durch?		
-	bne s1			;Nein!
-	dec blocks		;Alle Bildschirme durch?
-	bne out			;nein!
+	iny				; Get adress of next row 
+	iny				
+	dec lines		; Do we have scrolled all rows of our playfield?		
+	bne s1			; No!
+	dec blocks		; All sceens of our playfield scrolled?
+	bne out			; No!
 	
 	;
-	; Scrollbereich zurï¿½cksetzen auf Anfang
-	; Analog zur Routine in "Screeninit"
+	; Re- init playfield.
+	; => Scrolling beginns from the leftmost byte 
 	;
 	
-	lda #184		;ja!
-	sta blocks		;Anzahl der zu scrollenden Bildschirme zurŸcksetzen
+	lda #184		; Yes!
+	sta blocks		; reset # of screens/ playfield (184= 4 Screens, that is the # of bytes/ row of our playfield 
 
 	lda #<(adtab+1)	;Zeiger auf Adresstabelle		
 	sta zp2			;welche die Startadressen des Spielbildschirms
@@ -465,83 +469,80 @@ frame
 	.byte 0
 		
 ypos	
-	.byte 30				; Birds y- pos
+	.byte 30		; Birds y- pos
 	
-xrr	.byte 0					; Save place for our registers
+xrr	.byte 0			; Save place for our registers
 yrr	.byte 0
 
 waitc
-	.byte 1					; Wait- counter. 
+	.byte 1			; Wait- counter. 
 
 movebird
-	stx xrr					; Save registers
+	stx xrr			; Save registers
 	sty yrr
 	
-	lda frame				; Get index of frame
-	asl						; We are dealing with words, not bytes => multiply index by two
-	tax						; to get low- and then high byte from adress table 'framet'
-	lda framet,x			; Now get adress of frame data from table
-	sta zp4					; store in zeropage, low byte
-	inx						; move to high- byte in table
-	lda framet,x			; Get high- byte and put in zero- page
+	lda frame		; Get index of frame
+	asl				; We are dealing with words, not bytes => multiply index by two
+	tax				; to get low- and then high byte from adress table 'framet'
+	lda framet,x	; Now get adress of frame data from table
+	sta zp4			; store in zeropage, low byte
+	inx				; move to high- byte in table
+	lda framet,x	; Get high- byte and put in zero- page
 	sta zp4+1
 	
-	ldx ypos				; Get y- pos
-	ldy #9					; Init y- reg as index for frame data
+	ldx ypos		; Get y- pos
+	ldy #9			; Init y- reg as index for frame data
 l12	
-	lda (zp4),y				; Display frame, get frame- data
-	sta pmadr+512,x			; Write in memory area for player 0
+	lda (zp4),y		; Display frame, get frame- data
+	sta pmadr+512,x	; Write in memory area for player 0
 	inx					
-	dey						; Do so, until all 10 bytes (including the 0 at the
-	bne l12					; top and bottom of frame to avoid garbage after changing vertical pos of player
+	dey				; Do so, until all 10 bytes (including the 0 at the
+	bne l12			; top and bottom of frame to avoid garbage after changing vertical pos of player
 	
-	lda #100				; Set horiz. position, always 100 :-)
+	lda #100		; Set horiz. position, always 100 :-)
 	sta hposp0
 	
-	dec waitc				; Wait?
-	bne eee					; <>0? => yes! => do nothing
-	
-	lda #2					; =0 => Reset 'waitc'	and go on
+	dec waitc		; Wait?
+	bne ee2			; <>0? => yes! => do nothing
+
+	lda #2			; =0 => Reset 'waitc'	and go on
 	sta waitc
-	lda #0					; Sound off
+	lda #0			; Sound off
 	sta $d201
 	
-	lda 644					; Get trigger
-	bne down				; Not presssed? Bird loses altitute :-)
+	lda 644			; Get trigger
+	bne down		; Not presssed? Bird loses altitute :-)
 
-	lda frame				; Trigger pressed! Already 3 frames shown?
+	lda frame		; Trigger pressed! Already 3 frames shown?
 	cmp #3					
-	bne skip				; No, next frame
+	bne skip		; No, next frame
 
-	lda #0					; Yes, reset frame- counter
+	lda #0			; Yes, reset frame- counter
 	sta frame
-	jmp skip2				; Now, dont increase framecounter, skip it
+	jmp skip2		; Now, dont increase framecounter, skip it
 skip	
 	inc frame
 skip2
-	lda ypos				; Trigger pressed? If so, check
-	cmp #30					; if max height reached
-	beq eee					; in that case, do nothing
-	dec ypos				; Below max heigth, increase y- pos => move bird higher
-	jmp eee					; skip downward movement
+	lda ypos		; Trigger pressed? If so, check
+	cmp #30			; if max height reached
+	beq ee2			; in that case, do nothing
+	dec ypos		; Below max heigth, increase y- pos => move bird higher
+	jmp ee2			; skip downward movement
 down	
-	inc ypos				; Trigger not pressed, move bird lower
+	inc ypos		; Trigger not pressed, move bird lower
 	lda ypos
-	cmp #100				; As soon as bird reaches bottom of playfield
-	bne eee					; let him die => GAME OVER
+	cmp #100		; As soon as bird reaches bottom of playfield
+	bne ee2			; let him die => GAME OVER
 	lda #1							
 	sta kill
-eee		
-	lda 53252				; Collision bird with background?
-	cmp #4
-	bne ee2					; No
-	lda #1					; Yes => kill bird	
-	sta kill		
-ee2	
-	ldx xrr					; Write x- and y- reg. back
+	
+ee2
+	lda #9	
+	sta 53278		; Clear all collision registers		
+	ldx xrr			; Write x- and y- reg. back
 	ldy yrr		
 	
-	jmp $e462				; Leave intermediate VBI
+	jmp $e462		; Leave intermediate VBI
 
 ;
 ; Clear PM- Graphics => all!
@@ -685,39 +686,38 @@ cll2
 	;
 	; Draw Obstacles
 	;
+	; First thing you must remember ist: Screen 1 and 5 have to look the same
+	; if not, it is no endless scrolling :-) 
+	;
 
-	ldx #4
-	ldy #5
-	lda #5
+	ldx #4			; Screen 1
+pp0	
+	ldy #6
+pp1
+	lda #6
 	jsr plot
+	iny
+	cpy #18
+	bne pp1
+	inx
+	cpx #9
+	bne pp0
+
 	
-	ldx #188
-	ldy #5
-	lda #5
+	ldx #188		; Screen 4
+pp01
+	ldy #6
+pp2
+	lda #6
 	jsr plot
+	iny
+	cpy #18
+	bne pp2
+	inx
+	cpx #193
+	bne pp01
 	
-	
-	ldx #10
-	ldy #8
-	lda #5
-	jsr plot
-	
-	ldx #194
-	ldy #8
-	lda #5
-	jsr plot
-	
-	ldx #61
-	ldy #10
-	lda #5
-	jsr plot
-	
-	ldx #100
-	ldy #8
-	lda #5
-	jsr plot
-	
-	ldx #3
+	ldx #3			; Draw top of screen (clouds)
 	ldy #0
 	lda #5
 lli
@@ -730,7 +730,7 @@ lli
 	ldy #1
 	lda #2
 lli1
-	jsr plot
+	jsr plot		; Draw bottom of screen.....
 	inx
 	cpx #240
 	bne lli1
@@ -743,6 +743,24 @@ lli2
 	inx
 	cpx #240
 	bne lli2
+	
+	ldy #1			; Draw random screen
+yy2					; x pos 60 to 187 is the area of our playfield
+	ldx #60			; we do not see, when scrolling ist reset
+rand
+	lda 53770
+	cmp #10
+	bne skiip
+	lda #5
+	jsr plot
+skiip
+	inx
+	cpx #187
+	bne rand
+	iny
+	cpy #17
+	bne yy2
+	
 	
 	pla				; Get registers back
 	tay
@@ -768,16 +786,16 @@ xr4		.byte 0
 yr4		.byte 0
 
 plot	
-	stx xr4							;Register sichern
+	stx xr4				;Register sichern
 	sty yr4
 	
-	sta zeichen						;Zeichen zwischenspeichern
-	lda #<screen					;Zeiger auf Bildspeicher
-	sta zp6							;In Zero- Page
+	sta zeichen			;Zeichen zwischenspeichern
+	lda #<screen		;Zeiger auf Bildspeicher
+	sta zp6				;In Zero- Page
 	lda #>screen
 	sta zp6+1
 	
-	cpy #0							;Y=0, trivial, Zeichen an Pos. x ausgeben
+	cpy #0				;Y=0, trivial, Zeichen an Pos. x ausgeben
 	beq set		
 p1	
 	lda zp6
@@ -795,7 +813,7 @@ set
 	lda zeichen
 	sta (zp6),y
 	
-	ldx xr4							;Register zurï¿½ck
+	ldx xr4		;Register zurï¿½ck
 	ldy yr4
 	
 	rts	
@@ -805,7 +823,7 @@ set
 ;
 
 dli
-	pha					;Register retten
+	pha			;Register retten
 	txa
 	pha
 	tya
@@ -814,7 +832,7 @@ dli
 	lda vcount
 	asl
 	cmp #38
-	bcs dli1			;Aktuelle Zeile > 38?
+	bcs dli1	;Aktuelle Zeile > 38?
 
 	;
 	; Set Chset and colors for score display
@@ -1180,7 +1198,7 @@ chset12
 :8		.byte 0																; Empty						//0
  		.byte 127,127,127,31,31,7,7,1		; Cloud tile 1, bottom left //1
 		.byte 255,125,20,0,0,0,0,0			; Cloud tile bottom			//2
-		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cload tile top			//3
+		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cloud tile top			//3
 		.byte 253	,	253	,	244	,	244	,	208	,	208	,	64	,	64  ; Cloud tile, bottom right	//4
 :8		.byte 255															; Cloud tile, solid block	//5
 
