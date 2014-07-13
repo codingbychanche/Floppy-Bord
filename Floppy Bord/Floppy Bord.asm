@@ -190,7 +190,7 @@ wt
 ;
 
 main	
-	lda $d004			; Check collision Player 0 (our bir)
+	lda $d004			; Check collision Player 0 (our bird)
 	beq next			; with background of playfield
 	lda #1				; Collision!=> kill bird
 	sta kill				
@@ -223,7 +223,7 @@ incsc
 scrollon	
 	lda kill			; Bird still alive? We have to check for death- message from
 	beq notdeath		; scroll  routine. Has our bird died? =>kill=0 means no
-
+	
 	;
 	; Death Code
 	;
@@ -270,7 +270,7 @@ notdeath
 	jmp main			; Bird is alive. Repeat main loop
 	
 ;
-; Leere VBI- Routinen
+; Empty VBI
 ;
 
 vbi_imm_off
@@ -323,7 +323,7 @@ s11
 	jmp $e45f		; Leave VBI
 hard	
 	lda #3			; Reset fine scroll register				
-	sta $d404		; after chracter was moved to it's leftmost position and
+	sta $d404		; after chracter was moved to it's leftmost position 
 	sta clocks		
 	
 	lda #18			; We scroll 15 rows of our playfield
@@ -479,7 +479,7 @@ waitc
 
 movebird
 	stx xrr			; Save registers
-	sty yrr
+	sty yrr						
 	
 	lda frame		; Get index of frame
 	asl				; We are dealing with words, not bytes => multiply index by two
@@ -523,7 +523,7 @@ l12
 skip	
 	inc frame
 skip2
-	lda ypos		; Trigger pressed? If so, check
+	lda ypos		; Trigger is pressed => check
 	cmp #30			; if max height reached
 	beq ee2			; in that case, do nothing
 	dec ypos		; Below max heigth, increase y- pos => move bird higher
@@ -535,10 +535,10 @@ down
 	bne ee2			; let him die => GAME OVER
 	lda #1							
 	sta kill
-	
 ee2
 	lda #9	
 	sta 53278		; Clear all collision registers		
+	
 	ldx xrr			; Write x- and y- reg. back
 	ldy yrr		
 	
@@ -591,6 +591,12 @@ cl1
 ;
 
 zeile
+	.byte 0
+yp
+	.byte 0
+wide 
+	.byte 0
+length
 	.byte 0
 	
 	dummy	equ 0							;Platzhalter
@@ -686,36 +692,14 @@ cll2
 	;
 	; Draw Obstacles
 	;
-	; First thing you must remember ist: Screen 1 and 5 have to look the same
+	; First thing you must remember: Screen 1 and 5 have to look the same
 	; if not, it is no endless scrolling :-) 
+	; Screen 1 starts at x=4 Screen 5 starts at x=188
 	;
 
 	ldx #4			; Screen 1
-pp0	
-	ldy #6
-pp1
-	lda #6
-	jsr plot
-	iny
-	cpy #18
-	bne pp1
-	inx
-	cpx #9
-	bne pp0
 
-	
 	ldx #188		; Screen 4
-pp01
-	ldy #6
-pp2
-	lda #6
-	jsr plot
-	iny
-	cpy #18
-	bne pp2
-	inx
-	cpx #193
-	bne pp01
 	
 	ldx #3			; Draw top of screen (clouds)
 	ldy #0
@@ -731,7 +715,7 @@ lli
 	lda #2
 lli1
 	jsr plot		; Draw bottom of screen.....
-	inx
+	inx				; mother earth :-)
 	cpx #240
 	bne lli1
 	
@@ -744,31 +728,103 @@ lli2
 	cpx #240
 	bne lli2
 	
-	ldy #1			; Draw random screen
-yy2					; x pos 60 to 187 is the area of our playfield
-	ldx #60			; we do not see, when scrolling ist reset
-rand
+	; Draw random screen
+	; x pos 60 to 187 is the area of our playfield
+	; we do not see, when scrolling is reset
+	;
+	; First Part= City Background....
+	
+	ldx #65
+getlen
 	lda 53770
-	cmp #10
-	bne skiip
-	lda #5
+	cmp #18		; a>18?
+	bcs getlen	; yes!
+	cmp #14 	; no. a<10?
+	bcc getlen  ; no!
+	
+	tay
+drw
+	lda #6
 	jsr plot
-skiip
+	iny
+	cpy #18
+	bne drw
 	inx
 	cpx #187
-	bne rand
-	iny
-	cpy #17
-	bne yy2
+	bne getlen
+
+	;
+	; Second Part
+	; Draw obstacles (pilars)
+	;
+
+	ldx #70 	; Start at x=70 (off screen)
+pp0
+	lda #4		; Each pilar is 4 bytes wide
+	sta wide
+pp1
+	ldy #0		; Start at top of screen
+pp2
+	lda #5		; Color= solid withe block
+	jsr plot	; Plot it
+	iny			; until we reach bottom of playfield
+	cpy #18		
+	bne pp2	
+	inx			; Repeat until we have drawn 
+	dec wide	; pilar 
+	bne pp1
+	txa			; Next pilar
+	clc
+	adc #10
+	tax
+	cpx #188	; All pilars? That is the case when
+	bcc pp0		; xpos> 188.
+
+	; 
+	; Now we insert windows in our pilars
+	;
+
+	ldx #70		; once again, we start off screen
+gety			
+	lda 53770	; First= get random y- pos 
+	cmp #10		; a>10?
+	bcs gety	; yes!=> to big, get another
+	cmp #3  	; no. a<0?
+	bcc gety    ; no!
+	sta yp   	; y pos is between upper and lower border, save it!
+
 	
+pp01
+	lda #4		; Window has same width as pilar
+	sta wide
+pp02
+	lda #5		; Window is 5 bytes in heigth
+	sta length
+	lda yp
+	tay
+pp03	
+	lda #0		; Color= blank space
+	jsr plot	; Plot it
+	iny			
+	dec length	
+	bne pp03
+	inx			; Repeat until we have drawn 
+	dec wide	; full window 
+	bne pp02
+	txa			; Next window
+	clc
+	adc #10
+	tax
+	cpx #188	; All pilars? That is the case when
+	bcc gety	; xpos> 188.
 	
-	pla				; Get registers back
+	pla			; Get registers back
 	tay
 	pla
 	tax
 	pla
 	
-	rts
+	rts			; Return
 
 ;
 ; Plot Routine
@@ -916,10 +972,10 @@ dlout
 	
 	rti
 ;
-; Aktuellen Punktestand ausgeben
+; Show score
 ; 
-; Aufruf: 
-; delta= Anzahl der Punkte, um die der Z�hler erh�t werden soll
+; Call: 
+; delta= Amount of points to be added to current score
 ;
 ; Zeropage: zp3
 ;
@@ -951,14 +1007,14 @@ sl0
 	ldx #6
 
 sl1
-	lda points,x
-	cmp #"9"       					;Ziffer= 9?
-	bne sl2							;Nein!
+	lda points,x	; Get figure
+	cmp #"9"       	; Is it "9"?
+	bne sl2			; no, increase it
 
-	lda #"0"     					;0!
-	sta points,X
-	dex
-	bne sl1
+	lda #"0"     	; Yes! set to zero
+	sta points,X	; and get
+	dex				; next
+	bne sl1			; figure....
 
 	rts
 
@@ -970,20 +1026,20 @@ sl2
 	rts
 	
 ;
-; Punkte ausgeben
+; Show score
 ;
 
 showscor
-	stx xr5
+	stx xr5			; Save registers
 	sty yr5
-	ldy #7
+	ldy #7			; Number of digits
 	ldx #0
-	lda #<scorelin
-	sta zp3
-	lda #>scorelin
+	lda #<scorelin	; That's the adress where
+	sta zp3			; score will be stored (displayed
+	lda #>scorelin	; if it is the screen ram area :-)
 	sta zp3+1
 ss
-	lda points,x
+	lda points,x	; Output- loop
 	sta (zp3),y
 	inx
 	iny
@@ -997,13 +1053,13 @@ ss
 
 ;
 ; CLSCORE
-; Punktestand l�schen
+; Clear score
 ;
 
 clscor
 	ldx #0
 cl	
-	lda #16							;=0
+	lda #16			;=0
 	sta points,X
 	inx
 	cpx #6
@@ -1012,7 +1068,9 @@ cl
 	
 ;
 ; Wait
+; Sometimes our code is to fast........
 ;
+
 wtt
 	pha				; Save registers
 	txa
