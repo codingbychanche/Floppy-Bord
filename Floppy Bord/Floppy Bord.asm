@@ -1,8 +1,9 @@
 ; Floppy Bord
+; PAL- Version
 ;
 ; Another Bird- Conversion
 ;
-; BF 8.7.2014
+; BF 20.7.2014
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -78,9 +79,9 @@ zp7		equ $ec
 
 ; Parameter
 
-maxlin	equ 20				;Maximale Anzahl Zeilen des Spielebildschirms
-bytlin	equ 39				;Bytes je Zeile
-screens	equ 6				;6 komplette Bildschirme sollen gescrollt werden
+maxlin	equ 20		;Maximale Anzahl Zeilen des Spielebildschirms
+bytlin	equ 39		;Bytes je Zeile
+screens	equ 6		;6 komplette Bildschirme sollen gescrollt werden
 
 ; TASTATUR
 
@@ -91,6 +92,7 @@ CONSOL	EQU 53279
 ;
 
 	org 1792
+	
 	jmp titelscr
 kill
 	.byte 0
@@ -104,17 +106,24 @@ seqend
 ;
 
 titelscr
-	jsr clpm			; Clear player 0 
+	jsr clpm		; Clear player 0 
 
-	lda #<dltitel		; Show titel screen
+	lda #<dltitel	; Show titel screen
 	sta dlptr	
 	lda #>dltitel
 	sta dlptr+1
 
-	lda #>chset			; Activate char set for graphics 0,1,2
+	lda #>chset		; Activate char set for graphics 0,1,2
 	sta 756
+	
+	lda #194		; Set colors for titel
+	sta colbak
+	lda #255
+	sta colpf1
+	lda #194
+	sta colpf2
 st
-	lda consol			; Now wait until the start key is pressed
+	lda consol		; Now wait until the start key is pressed
 	and #1
 	beq begin
 	jmp st	
@@ -123,64 +132,69 @@ st
 ;
 
 begin
-	jsr screeninit		; Game- screen init (draw playfield, init antic- program)
-	jsr clscor			; Clear old score
-	jsr showscor		; Show score
+	lda #0			; Screen off. It will be turned on in 'pminit'
+	sta 559			; It is much nicer this way, so we won't notice waht is happening when playfield is initialized...
+	
+	lda #0			; Background color= black, we do that here, so we
+	sta colbak		; don't have to take care later within dli- routine (which would complicate things...)
+	
+	jsr screeninit	; Game- screen init (draw playfield, init antic- program)
+	jsr clscor		; Clear old score
+	jsr showscor	; Show score
 
-	lda #0				; Bird is alive!
+	lda #0			; Bird is alive!
 	sta kill
 	
 	lda #9	
-	sta $d01e			; Clear all collision registers		
+	sta $d01e		; Clear all collision registers		
 	
 	lda #0
 	sta seqend				
-	lda #50				; Bird will apear at line 50 on the screen
+	lda #50			; Bird will apear at line 50 on the screen
 	sta ypos
 
-	lda #<dli   		; Display- List- Interrupt on
+	lda #<dli   	; Display- List- Interrupt on
 	sta vdlist
 	lda #>dli
 	sta vdlist+1
 	lda #$C0
 	sta NMIEN
 	
-	lda #<dlgame		; Show playfield		
+	lda #<dlgame	; Show playfield		
 	sta dlptr						
 	lda #>dlgame
 	sta dlptr+1
 	
-	lda #<message		; Show message below score, just for fun
+	lda #<message	; Show message below score, just for fun
 	sta msg+1
 	lda #>message
 	sta msg+2
 	
-	jsr pminit			; Init sprites
+	jsr pminit		; Init sprites
 
-	lda #3				; Init Pokey
-	sta $d20f			; SKCTL
+	lda #3			; Init Pokey
+	sta $d20f		; SKCTL
 	lda #0		 
-	sta $d208			; AUDCTL
-
+	sta $d208		; AUDCTL
 wt
-	lda 644				; Wait for trigger
+	lda 644			; Wait for trigger
 	bne wt
 	
-	lda #0				; Init frame- counter for bird animation
+	lda #0			; Init frame- counter for bird animation
 	sta frame
-	ldy #<movebird		; Activate deffered VBI for player (bird) movement
+	ldy #<movebird	; Activate deffered VBI for player (bird) movement
 	ldx #>movebird				
 	lda #7
 	jsr $e45c
 	
-	lda #1				; Delay for scrolling
+	lda #1			; Delay for scrolling
 	sta wait
-	lda #3				; Color clocks for fine scroll
+	lda #3			; Color clocks for fine scroll
 	sta clocks
-	lda #184			;48 x 5 =240 Bytes = 5 Bildschimre 
-	sta blocks   		;werden gescrollt, danach alles von Vorne :-)
+	lda #184		;48 x 5 =184 Bytes = 5 Bildschimre 
+	sta blocks   	;werden gescrollt, danach alles von Vorne :-)
 	
-	ldy #<scroll		;Scroll Routine im Immediate VBI
+	ldy #<scroll	;Scroll Routine im Immediate VBI
 	ldx #>scroll
 	lda #6
 	jsr $e45c	
@@ -190,13 +204,13 @@ wt
 ;
 
 main	
-	lda $d004			; Check collision Player 0 (our bird)
-	beq next			; with background of playfield
-	lda #1				; Collision!=> kill bird
+	lda $d004		; Check collision reg. for Player 0 (our bird)
+	beq next		; with background of playfield
+	lda #1			; Collision!=> kill bird
 	sta kill				
 next							
-	lda seqend			;Scroll sequence end?
-	beq scrollon		;No, scroll on=> VBI remains on!
+	lda seqend		;Scroll sequence end? 
+	beq scrollon	;No, scroll on=> VBI remains on!
 	
 	;
 	; Init new playfield
@@ -204,25 +218,25 @@ next
 	
 	jsr screeninit
 	
-	lda #0				; Message=> scrolling enabeled
-	sta seqend
+	lda #0			; Message=> scroll playfield from start
+	sta seqend		
 	
 	ldx #100
 incsc
-	lda #1				; Increase score!	
-	sta delta			; Show Score
+	lda #1			; Increase score!	
+	sta delta		; Show Score
 	jsr score
 	jsr showscor	
 	jsr wtt
-	lda kill			; We are in a loop an scrolling is
-	cmp #1				; running again, so we have to check, if 
-	beq death			; 'scroll' send us a message via kill- flag
-	dex					; if so, jumpt to death routine :(
+	lda kill		; We are in a loop an scrolling is
+	cmp #1			; running again, so we have to check, if 
+	beq death		; 'scroll' send us a message via kill- flag
+	dex				; if so, jumpt to death routine :(
 	bne incsc
 
 scrollon	
-	lda kill			; Bird still alive? We have to check for death- message from
-	beq notdeath		; scroll  routine. Has our bird died? =>kill=0 means no
+	lda kill		; Bird still alive? We have to check for death- message from
+	beq notdeath	; scroll  routine. Has our bird died? =>kill=0 means no
 	
 	;
 	; Death Code
@@ -239,13 +253,13 @@ death
 	lda #7
 	jsr $e45c
 
-	lda #%10000111		; BOOOOM- sound :-)
-	sta $d201			; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
-	lda #25				; Freq.
-	sta $d200			; AUDF1
+	lda #%10000111	; BOOOOM- sound :-)
+	sta $d201		; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
+	lda #25			; Freq.
+	sta $d200		; AUDF1
 	
 	ldx #16
-deathsound				; Play sound
+deathsound			; Play sound
 	txa
 	and $d201
 	sta $d201
@@ -253,21 +267,20 @@ deathsound				; Play sound
 	dex
 	bne deathsound
 	
-	lda #0				; Silent!
+	lda #0			; Silent!
 	sta $d201	
 gover	
-	lda #<m1			; Inform the player that he has just died
-	sta msg+1			; (in case he won't belive)
+	lda #<m1		; Inform the player that he has just died
+	sta msg+1		; (in case he won't belive)
 	lda #>m1
 	sta msg+2
 trig	
-	lda	644				; Wait for trigger key
-	bne trig
-	
-	jmp titelscr		; Show titel = > this game is over!	
+	lda	644			; Wait for trigger key
+	bne trig		; and, if predded =>
+	jmp titelscr	; show titel = > this game is over!	
 	
 notdeath						
-	jmp main			; Bird is alive. Repeat main loop
+	jmp main		; Bird is alive. Repeat main loop
 	
 ;
 ; Empty VBI
@@ -326,7 +339,7 @@ hard
 	sta $d404		; after chracter was moved to it's leftmost position 
 	sta clocks		
 	
-	lda #18			; We scroll 15 rows of our playfield
+	lda #20  		; We scroll 20 rows of our playfield
 	sta lines
 	
 	lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
@@ -398,7 +411,7 @@ pminit
 	lda #pmadr/256	
 	sta pmbase
 
-	lda #24
+	lda #255
 	sta colpm0
 
 	lda #204
@@ -545,18 +558,16 @@ ee2
 	jmp $e462		; Leave intermediate VBI
 
 ;
-; Clear PM- Graphics => all!
+; Clear PM- graphics => all!
 ;
 
 clpm
-	lda #<(pmadr+512)					
-	sta zp4
-	lda #>(pmadr+512)
-	sta zp4+1
 	ldy #255
 cl1
 	lda #0
-	sta (zp4),y
+	sta pmadr+512,y	; Clear player 0 (bird)
+	sta pmadr+612,y	; Clear player 1 (right border)
+	sta pmadr+768,y	; Clear player 2 (left border)
 	dey
 	bne cl1
 	rts
@@ -598,8 +609,10 @@ wide
 	.byte 0
 length
 	.byte 0
+col
+	.byte 0
 	
-	dummy	equ 0							;Platzhalter
+	dummy	equ 0						; a, well, a dummy.....
 	
 adtab
 	.byte dummy,a(screen)				; Row 1
@@ -647,7 +660,7 @@ screeninit
 	lda #>(z0+1)	; bildschirms in zp- Register 1
 	sta zp6+1
 
-	ldx #19			; 20 rows
+	ldx #20			; 20 rows
 	ldy #0
 lll0
 	lda (zp5),y		;low- Byte
@@ -696,12 +709,8 @@ cll2
 	; if not, it is no endless scrolling :-) 
 	; Screen 1 starts at x=4 Screen 5 starts at x=188
 	;
-
-	ldx #4			; Screen 1
-
-	ldx #188		; Screen 4
 	
-	ldx #3			; Draw top of screen (clouds)
+	ldx #3		; Draw top of screen (clouds)
 	ldy #0
 	lda #5
 lli
@@ -714,13 +723,13 @@ lli
 	ldy #1
 	lda #2
 lli1
-	jsr plot		; Draw bottom of screen.....
-	inx				; mother earth :-)
+	jsr plot	
+	inx			
 	cpx #240
 	bne lli1
 	
-	ldx #3
-	ldy #18
+	ldx #3		; Draw bottom of screen.....
+	ldy #18		; mother earth :-)
 	lda #7
 lli2
 	jsr plot
@@ -728,8 +737,83 @@ lli2
 	cpx #240
 	bne lli2
 	
+	;
+	; Draw first Screen
+	; Screen 1 and 5 must look alike! So, actually we draw two
+	; screens - exactly the same - at two different locations
+	; on our playfield
+	;
+
+	ldx #24		; SCREEN 1
+
+	lda #4		; Pilar is 4 bytes wide
+	sta wide
+	lda #8		; Start color. Color will vary across width
+	sta col		; to simulate some depth
+ppp1
+	ldy #13		; Start at middle of screen
+ppp2
+	lda col		; Color
+	jsr plot	; Plot it
+	iny			; until we reach bottom of playfield
+	cpy #21
+	bne ppp2	
+	inx			; Repeat  
+	inc col     ; Next color
+	dec wide	; Drawn pilar until full width reached
+	bne ppp1
+	
+	ldy #12		; Draw flag pole
+	ldx #26
+flag1
+	lda #12
+	jsr plot
+	dey
+	cpy #8
+	bne flag1
+	
+	lda #13+128	; Set flag atop
+	jsr plot
+	inx 
+	lda #14+128
+	jsr plot
+	
+	ldx #188+20	; SCREEN 5
+
+	lda #4		; Pilar is 4 bytes wide
+	sta wide
+	lda #8		; Start color. Color will vary across width
+	sta col		; to simulate some depth
+ppp12
+	ldy #13		; Start at middle of screen
+ppp22
+	lda col		; Color
+	jsr plot	; Plot it
+	iny			; until we reach bottom of playfield
+	cpy #21
+	bne ppp22	
+	inx			; Repeat  
+	inc col     ; Next color
+	dec wide	; Drawn pilar until full width reached
+	bne ppp12
+	
+	ldy #12		; Draw flag pole
+	ldx #188+22
+flag2
+	lda #12
+	jsr plot
+	dey
+	cpy #8
+	bne flag2
+	
+	lda #13+128	; Set flag atop. +128 for inv. char= color 5
+	jsr plot
+	inx 
+	lda #14+128
+	jsr plot
+	
 	; Draw random screen
-	; x pos 60 to 187 is the area of our playfield
+	; x pos 60 to 144 is the area of our playfield
 	; we do not see, when scrolling is reset
 	;
 	; First Part= City Background....
@@ -750,7 +834,7 @@ drw
 	cpy #18
 	bne drw
 	inx
-	cpx #187
+	cpx #184
 	bne getlen
 
 	;
@@ -758,27 +842,33 @@ drw
 	; Draw obstacles (pilars)
 	;
 
-	ldx #70 	; Start at x=70 (off screen)
+	ldx #70 	; Start at x=70 (off screen) => once again. We change pur playfield
+				; while scrolling, so we have to hurry ahead ang change things before
+				; they apear on screen.....
 pp0
 	lda #4		; Each pilar is 4 bytes wide
 	sta wide
+	lda #8		; Start color. Color will vary across width
+	sta col		; to simulate some depth
 pp1
-	ldy #0		; Start at top of screen
+	ldy #1		; Start at top of screen, well, almost...
 pp2
-	lda #5		; Color= solid withe block
+	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #18		
+	cpy #20
 	bne pp2	
-	inx			; Repeat until we have drawn 
-	dec wide	; pilar 
+	inx			; Repeat  
+	inc col     ; Next color
+	dec wide	; Drawn pilar until full width reached
 	bne pp1
 	txa			; Next pilar
 	clc
-	adc #10
+	adc #10		; Space between pilars
+				; CHANGE THIS, TO DRAW MORE OR LESS PILARS
 	tax
-	cpx #188	; All pilars? That is the case when
-	bcc pp0		; xpos> 188.
+	cpx #184	; All pilars? That is the case when
+	bcc pp0		; xpos> 184
 
 	; 
 	; Now we insert windows in our pilars
@@ -789,16 +879,15 @@ gety
 	lda 53770	; First= get random y- pos 
 	cmp #10		; a>10?
 	bcs gety	; yes!=> to big, get another
-	cmp #3  	; no. a<0?
+	cmp #2  	; no. a<0?
 	bcc gety    ; no!
-	sta yp   	; y pos is between upper and lower border, save it!
-
-	
+	sta yp   	; y pos is between upper and lower border, save it!	
 pp01
 	lda #4		; Window has same width as pilar
 	sta wide
 pp02
-	lda #5		; Window is 5 bytes in heigth
+	lda #5		; Window is 5 bytes heigth
+				; CHANGE THIS TO INCREASE/ DECREASE DIFFICULTY
 	sta length
 	lda yp
 	tay
@@ -813,10 +902,10 @@ pp03
 	bne pp02
 	txa			; Next window
 	clc
-	adc #10
+	adc #10		; SPACE BETWEEN PILARS	
 	tax
 	cpx #188	; All pilars? That is the case when
-	bcc gety	; xpos> 188.
+	bcc gety	; xpos> 188?
 	
 	pla			; Get registers back
 	tay
@@ -827,13 +916,13 @@ pp03
 	rts			; Return
 
 ;
-; Plot Routine
+; Plot 
 ;
-; Setzt ein beliebiges Zeichen in den Bildspeicher
+; Writes any character you want, at any position in screen ram
 ;
-; x-Reg	= Xpos
-; y-Reg	= Ypos
-; a		= Zeichen
+; x-reg	= xpos
+; y-reg	= ypos
+; a		= Char
 ;
 ; Zeropage: zp6
 
@@ -842,22 +931,22 @@ xr4		.byte 0
 yr4		.byte 0
 
 plot	
-	stx xr4				;Register sichern
+	stx xr4		; Save registers
 	sty yr4
 	
-	sta zeichen			;Zeichen zwischenspeichern
-	lda #<screen		;Zeiger auf Bildspeicher
-	sta zp6				;In Zero- Page
+	sta zeichen		; Save character
+	lda #<screen	; Init pointer at screen ram
+	sta zp6			
 	lda #>screen
 	sta zp6+1
 	
-	cpy #0				;Y=0, trivial, Zeichen an Pos. x ausgeben
-	beq set		
+	cpy #0		; ypos equals 0, that is easy, jump
+	beq set		; to our set- routine, we don't have to calcualte line- adress
 p1	
-	lda zp6
-	clc
-	adc #bytes
-	sta zp6
+	lda zp6		; Get pointer at screen ram
+	clc			; Now calculate adress of line from given y- pos
+	adc #bytes	; The slow way :-)
+	sta zp6				
 	lda zp6+1
 	adc #0
 	sta zp6+1
@@ -869,7 +958,7 @@ set
 	lda zeichen
 	sta (zp6),y
 	
-	ldx xr4		;Register zur�ck
+	ldx xr4		; Get registers back
 	ldy yr4
 	
 	rts	
@@ -879,7 +968,7 @@ set
 ;
 
 dli
-	pha			;Register retten
+	pha			;  Save registers
 	txa
 	pha
 	tya
@@ -888,74 +977,74 @@ dli
 	lda vcount
 	asl
 	cmp #38
-	bcs dli1	;Aktuelle Zeile > 38?
+	bcs dli1	; Is electron beam at row > 38?
 
 	;
 	; Set Chset and colors for score display
 	;
 	
-	lda #>chset			;Nein!=> Wir sind also noch im Anzeigefeld 
-	sta $d409			;f�r die Punkte
-	lda #5				;Farbe f�r Gro�buchstaben Gr.1/2						
+	lda #>chset	; No! Electron beam is at line # below 38
+	sta $d409	; so we are still within our score display
+	lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 					
 	sta colpf0s						
-	lda #20 			;Farbe f�r Kleinbuchstaben Gr.1/2. Farbe f�r Buchstaben Gr.0
+	lda #20 	; Change colors for lower case characters in (basic)mode 1,2 or 0
 	sta colpf1s
 	lda #116
 	sta colpf2s
 	lda #155
 	sta colpf3s
-	lda #14				; Bright wite for the background
+	lda #14		; Bright wite for the background
 	sta wsync
-	sta colbaks
+	sta colbaks ; Ende of screen area for score display
 
 dli1								
-	lda vcount			;Aktuelle Zeile < 38?
-	asl					;Wir sind also noch im Anzeigefeld f�r
-	cmp #38				;die Punkte
-	bcc dlout			;=> nix tun
+	lda vcount	; Is electron beam at row # bigger than 38?
+	asl			; No? So we are still in area of score display
+	cmp #38		; 
+	bcc dlout	; Do nothing!
 
 	;
 	; Set chset for playfield and playfield colors
 	;
 												
-	lda #>chset12		;Nein: Wir sind im Spielfeldbereich	
-	sta $d409			;=>Spielfeldbereich einf�rben.
-	lda #0				; F�r Bit Kombi: 01
+	lda #>chset12 ; Electron beam has crossed row 38 that means
+	sta $d409	; we are in playfild area of our screen
+	lda #10		; Color for bit combination: 01
 	sta colpf0s										
-	lda #200			; F�r Bit Kombi: 10
+	lda #200	; Color for bit combination: 10
 	sta colpf1s
-	lda #14				; F�r Bit Kombi: 11
+	lda #14		; Color for bit combination: 11
 	sta colpf2s
-	lda #255			;F�r die inversen Zeichen=Farbe 5
+	lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
 	sta colpf3s
 
 	; Draw sky
 
-	ldx #15				; Draw Background
-	lda #127			; Bright blue
+	ldx #15		; Draw Background
+	lda #127	; Bright blue
 dd1
-	sta wsync			; Init background color reg.
+	sta wsync	; Init background color reg.
 	sta colbaks
-	ldy #75				; This determins the height of each color cycle
+	ldy #75		; This determins the height of each color cycle
 dd2
 	dey
 	bne dd2
 	
-	sec					; Blue get's darker
+	sec			; Blue get's darker
 	sbc #1
-	dex					; Unttil we reach the lower third
-	bne dd1				; of our playfield
+	dex			; Unttil we reach the lower third
+	bne dd1		; of our playfield
 
 	; Draw ground
 
-	ldx #15				; Draw ground
-	lda #194			; Start with dark green
+	ldx #15		; Draw ground
+	lda #194	; Start with dark green
 dc1
 	sta wsync
 	sta colbaks
 	ldy #19
 dc2
-	dey					; Heigh of each color cycle
+	dey			; Heigh of each color cycle
 	bne dc2
 	clc
 	adc #1
@@ -964,7 +1053,7 @@ dc2
 
 
 dlout
-	pla					; Get registers back
+	pla			; Get registers back
 	tay
 	pla
 	tax
@@ -1096,55 +1185,58 @@ ww1
 	rts
 	
 ;
-; Game Screen/ Titel usw.
+; Antic program and contents of screen RAM for
+; our titel screen
 ;
+
+; Some useful equates ;-)
 
 gr0		equ $02					; Gr. 0
 gr1		equ $06					; Gr. 1
-gr12	equ $14					; Gr. 12 mit Horizontalem Scrolling
-
-	;
-	; Display- List und Bilddaten f�r den Titelbildschirm
-	;
+gr2		equ $07
+gr12	equ $14					; Gr. 12, horiz. scrolling enabeled
 
 dltitel							;Titel Screen
 	.byte $70,$70,$70
-	.byte $40+gr1,a(titel)
-:2	.byte gr1
+	.byte $40+gr2,a(titel)
+:3	.byte gr1
+:5	.byte 112
+	
+:3	.byte gr0
+
 	.byte $41,a(dltitel)
 	
 titel
-	.byte "  bored of FLOPPY   "
+	.byte "  BORED OF FLOPPY   "
 	.byte "                    "
-	.byte "   press <START>    "
+	.byte "   press <start>    "
+	.byte "                    "
+	.byte "           RetroZock 2014               "
+	.byte "          www.retrozock.com             "
+	.byte "   Source code available at:GitHub      "
 	
-	;
-	; Display- List f�r den Spielebildschirm
-	;
-	org $1000
+;	
+; Antic program for our playfield
+;
+
+	org 6000
 	
-bytes	equ 240				;Bytes je Zeile
+bytes	equ 240						; Our playfield is 240 bytes wide
 
-dlgame						;Game Screen						
-	.byte $70+128			;Leer
-
-	; Jede Zeile hat 40 Bytes= 40 Zeichen
-	; Das Spielfeld besteht aus 6 Bildschirmen
-	; Damit ist jede Zeile 6 x 40 = 240 Bytes lang
-
-
+dlgame						 	
+	.byte $70+128						; Start of Antic programm for our playfield			
 	.byte 112
-	.byte $40+gr1,a(scorelin)		;Punkte- Anzeige
-	.byte 112
+	.byte $40+gr1,a(scorelin)			; Gr.1 display. Tha's where we can see our score
+	.byte 112							; and other important messages.....
 msg
-	.byte $40+gr1,a(message)		; Message line, tell the player what's going on
+	.byte $40+gr1,a(message)			; Message line, tell the player what's going on
 
-	.byte $70+128
+	.byte $70+128						; 8 empty lines, start display- list interrupt
 	
-z0	.byte $40+gr12,a(screen)		 ;Gamescreen, Zeile 0
-z1	.byte $40+gr12,a(screen+1*bytes) ;Gamescreen, Zeile 1	
-z2	.byte $40+gr12,a(screen+2*bytes) ;    ''      Zeile 2
-z3	.byte $40+gr12,a(screen+3*bytes) ;Und so fort.......
+z0	.byte $40+gr12,a(screen)			; Playfield row 0
+z1	.byte $40+gr12,a(screen+1*bytes) 	
+z2	.byte $40+gr12,a(screen+2*bytes) 
+z3	.byte $40+gr12,a(screen+3*bytes) 
 z4	.byte $40+gr12,a(screen+4*bytes)
 z5	.byte $40+gr12,a(screen+5*bytes)
 z6	.byte $40+gr12,a(screen+6*bytes)
@@ -1157,16 +1249,14 @@ z12	.byte $40+gr12,a(screen+12*bytes)
 z13	.byte $40+gr12,a(screen+13*bytes)
 z14	.byte $40+gr12,a(screen+14*bytes)
 z15	.byte $40+gr12,a(screen+15*bytes)
-z16	.byte $40+gr12,a(screen+16*bytes)
+z16	.byte $40+gr12,a(screen+16*bytes) 
 z17	.byte $40+gr12,a(screen+17*bytes)
 z18	.byte $40+gr12,a(screen+18*bytes)
-z19	.byte $40+gr12,a(screen+19*bytes)
+z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
 
-	; Ende, Sprung zum AnFang der Display-List
-
-	.byte $41,a(dlgame)
+	.byte $41,a(dlgame)				 	; End of display- list, start all over again....
 	
-scorelin
+scorelin								; Contents of screen ram for status display
 	.byte "score               "
 message
 	.byte "FLY LITTLE BIRD..   "
@@ -1174,9 +1264,9 @@ m1
 	.byte "    GAME OVER       "
 	
 ;
-; Zeichensatz Daten
+; Charset data
 ;
-; Text, Gr. 0
+; For: Text (Atari Basic-) text modes 0,1,2 
 ;
 
 	 org 12288
@@ -1248,27 +1338,37 @@ chset
 	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$54,$54,$54,$54,$54,$54,$00
 	
 ;
-; Zeichensatz, Spielfed Gr.12/13
+; Charset data
+;
+; For: Text (Atari Basic-) text modes 12 and 13 
 ;
 
 	org 16384
 chset12
 :8		.byte 0																; Empty						//0
- 		.byte 127,127,127,31,31,7,7,1		; Cloud tile 1, bottom left //1
-		.byte 255,125,20,0,0,0,0,0			; Cloud tile bottom			//2
+ 		.byte 127,127,127,31,31,7,7,1										; Cloud tile 1, bottom left //1
+		.byte 255,125,20,0,0,0,0,0											; Cloud tile bottom			//2
 		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cloud tile top			//3
 		.byte 253	,	253	,	244	,	244	,	208	,	208	,	64	,	64  ; Cloud tile, bottom right	//4
 :8		.byte 255															; Cloud tile, solid block	//5
 
 :8		.byte 85															; Solid black block			//6		
 		.byte 85	,	85	,	85	,	85	,	85	,	101	,	166	,	170 ; Solid black block, bottom //7
+
+:8		.byte 187													        ; Light green block 		//8
+		.byte 186	,	186	,	186	,	186	,	186	,	186	,	186	,	186	; Not so light green block  //9
+:8		.byte 174															; Solid green block			//10
+:8		.byte 171															; Solid green block			//11
+:8		.byte 64															; Flag pole 				//12
+	    .byte 76	,	127	,	127	,	127	,	127	,	127	,	127	,	76  ; Flag part 	1			//13
+		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14	    		
 							
 ;
-; Bildspeicher Spielebildschirm
+; Screen- ram of playfield
 ;
 
 screen
-	org 18000 
+	org 20000
 
 
 
