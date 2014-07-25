@@ -3,7 +3,9 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 20.7.2014
+; BF 24.7.2014
+;
+; Vx.x // 24.7.2014
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -91,16 +93,17 @@ CONSOL	EQU 53279
 ; Start
 ;
 
-	org 1792
+	org $0700
 	
 	jmp titelscr
 kill
-	.byte 0
+	.byte 0			; Killflag. 1 means, player (bird) has died.....
 wait
-	.byte 0
+	.byte 0			; Delay for srolling, the bigger, the slower
 seqend
-	.byte 0
-	
+	.byte 0			; Flag. If this equals to 1, scroll sequence has ended...
+level
+	.byte 0			; Yes, it's a Level Counter
 ;
 ; Display Titel
 ;
@@ -116,12 +119,14 @@ titelscr
 	lda #>chset		; Activate char set for graphics 0,1,2
 	sta 756
 	
-	lda #194		; Set colors for titel
+	lda #14			; Set colors for titel, backrground of (Atari Basic) mode 1 and 2 
 	sta colbak
-	lda #255
+	lda #200		; Color for lower case characters (Atari Basic) mode 1 and 2
 	sta colpf1
-	lda #194
+	lda #14			; Background for (Atari Basic) mode 0
 	sta colpf2
+	lda #196		; Color for upper case characters (Atari Basic) mode 1 and 2
+	sta colpf0
 st
 	lda consol		; Now wait until the start key is pressed
 	and #1
@@ -148,8 +153,8 @@ begin
 	lda #9	
 	sta $d01e		; Clear all collision registers		
 	
-	lda #0
-	sta seqend				
+	lda #0			; Flag: Scroll routine alters that to 1 if the entire playfield
+	sta seqend		; is scrolled and has reached the right border....		
 	lda #50			; Bird will apear at line 50 on the screen
 	sta ypos
 
@@ -191,13 +196,16 @@ wt
 	sta wait
 	lda #3			; Color clocks for fine scroll
 	sta clocks
-	lda #184		;48 x 5 =184 Bytes = 5 Bildschimre 
-	sta blocks   	;werden gescrollt, danach alles von Vorne :-)
+	lda #184		; Number of bytes to be scrolled
+	sta blocks   	
 	
 	ldy #<scroll	;Scroll Routine im Immediate VBI
 	ldx #>scroll
 	lda #6
-	jsr $e45c	
+	jsr $e45c
+	
+	lda #0			; We start at level 0... sorry, actually it is level 1....
+	sta level	
 	
 ;
 ; Main Loop
@@ -219,20 +227,28 @@ next
 	jsr screeninit
 	
 	lda #0			; Message=> scroll playfield from start
-	sta seqend		
+	sta seqend	
 	
+	inc level		; Next level	
+	lda level
+	cmp #32			; If = 10, we start over
+	bne goon
+	lda #0
+	sta level
+goon	
 	ldx #100
 incsc
 	lda #1			; Increase score!	
 	sta delta		; Show Score
 	jsr score
 	jsr showscor	
-	jsr wtt
-	lda kill		; We are in a loop an scrolling is
-	cmp #1			; running again, so we have to check, if 
-	beq death		; 'scroll' send us a message via kill- flag
-	dex				; if so, jumpt to death routine :(
-	bne incsc
+	jsr wtt			; Wait!	
+
+	lda $d004		; Check collision reg. for Player 0 (our bird)
+	bne death		; with background of playfield
+					; if so, jumpt to death routine :(
+	dex				; Still alive!				
+	bne incsc		; Increase score!
 
 scrollon	
 	lda kill		; Bird still alive? We have to check for death- message from
@@ -332,14 +348,15 @@ s11
 	lda clocks		; Colocks=3,2,1 counting down this values scrolls		
 	sta $d404		; character to the left
 	ldx xr			; Write regsiters back
-	ldy yr					
+	ldy yr	
+	lda a				
 	jmp $e45f		; Leave VBI
 hard	
 	lda #3			; Reset fine scroll register				
 	sta $d404		; after chracter was moved to it's leftmost position 
 	sta clocks		
 	
-	lda #20  		; We scroll 20 rows of our playfield
+	lda #20 		; We scroll 20 rows of our playfield
 	sta lines
 	
 	lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
@@ -392,16 +409,16 @@ lll01
 	iny
 	iny
 	dex
-	bne lll01		; Alle Adressen? => Wenn ja, VBI verlassen	
-	lda #1			; Message=> scroll sequence over => stop vbi
-	sta seqend						
+	bne lll01		; All adresses? => if so
+	lda #1			; Message=> scroll sequence over => next level and reset playfield
+	sta seqend							
 out	
 	
 	ldx xr
 	ldy yr
 	lda a
 	
-	jmp $e45f		;VBI verlassen
+	jmp $e45f		; Leave VBI
 
 ;
 ; Init PM- Graphics
@@ -526,6 +543,20 @@ l12
 	lda 644			; Get trigger
 	bne down		; Not presssed? Bird loses altitute :-)
 
+	lda #3			; Init Pokey
+	sta $d20f		; SKCTL
+	lda #0	 
+	sta $d208		; AUDCTL
+	
+	lda #%10000111
+	sta $d201		; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
+	lda #13			; Freq.
+	sta $d200		; AUDF1
+
+	lda #35			; Freq
+	sta $d200
+	
+
 	lda frame		; Trigger pressed! Already 3 frames shown?
 	cmp #3					
 	bne skip		; No, next frame
@@ -539,7 +570,7 @@ skip2
 	lda ypos		; Trigger is pressed => check
 	cmp #30			; if max height reached
 	beq ee2			; in that case, do nothing
-	dec ypos		; Below max heigth, increase y- pos => move bird higher
+	dec ypos		; Below max heigth, decrease y- pos => move bird higher
 	jmp ee2			; skip downward movement
 down	
 	inc ypos		; Trigger not pressed, move bird lower
@@ -601,6 +632,23 @@ cl1
 ;			zp6
 ;
 
+; This tabel holds values for number of pillars and window height
+; You can change the difficulty of the game..... 
+
+wheight
+	.byte	9,7,4,7,7,6,6,6,6,6,6,6,6,6,6,6
+	.byte   5,5,5,5,5,5,4,5,5,5,5,5,5,5,5,5
+dist
+	.byte 	6,7,15,6,6,7,7,7,7,7,7,7,7,7,7,7
+	.byte	8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+	
+space	
+	.byte 8					; Space between pillars
+window	
+	.byte 5					; Big, or small window....
+
+; Other important var's
+
 zeile
 	.byte 0
 yp
@@ -611,8 +659,10 @@ length
 	.byte 0
 col
 	.byte 0
-	
-	dummy	equ 0						; a, well, a dummy.....
+
+; Adress table
+
+dummy	equ 0						; a, well, a dummy.....
 	
 adtab
 	.byte dummy,a(screen)				; Row 1
@@ -674,12 +724,22 @@ lll0
 	bne lll0		; All rows?
 
 	;
+	; Get number of pillars (obstacles) and height of window per pillar
+	;
+	
+	ldx level
+	lda wheight,x
+	sta window
+	lda dist,x
+	sta space
+
+	;
 	; Clear screen 2,3,4
 	; That way the player wont't notice that anythig happens on the screen.
 	; Reason: Screen 5 is displayed, we don't change anything here
 	; All other changes happen on screens which are not displayed
 	;
-	; Screen 2 starts at x = 60 that is because we change our screnns while scrolling!
+	; Screen 2 starts at x = 60 that is because we change our screns while scrolling!
 	; We have to hurry ahead => do changes before they apear on the visible part
 	; of our screen.
 	;
@@ -706,7 +766,7 @@ cll2
 	; Draw Obstacles
 	;
 	; First thing you must remember: Screen 1 and 5 have to look the same
-	; if not, it is no endless scrolling :-) 
+	; if not, it is no endless ing :-) 
 	; Screen 1 starts at x=4 Screen 5 starts at x=188
 	;
 	
@@ -728,13 +788,13 @@ lli1
 	cpx #240
 	bne lli1
 	
-	ldx #3		; Draw bottom of screen.....
+	ldx #4		; Draw bottom of screen.....
 	ldy #18		; mother earth :-)
 	lda #7
 lli2
 	jsr plot
 	inx
-	cpx #240
+	cpx #230
 	bne lli2
 	
 	;
@@ -814,7 +874,7 @@ flag2
 	
 	; Draw random screen
 	; x pos 60 to 144 is the area of our playfield
-	; we do not see, when scrolling is reset
+	; we do not see, when ing is reset
 	;
 	; First Part= City Background....
 	
@@ -828,22 +888,29 @@ getlen
 	
 	tay
 drw
-	lda #6
+	lda 53770
+	cmp #160
+	bne nowin
+	lda #15		; Draw part of building with window
+	jmp ddr
+nowin
+	lda #6		; Draw part of building with window
+ddr
 	jsr plot
-	iny
+	iny			
 	cpy #18
-	bne drw
+	bne drw		; Draw until we reach bottom of playfield
 	inx
-	cpx #184
-	bne getlen
+	cpx #184	; Draw until we reach end of playfield (right border)
+	bne getlen	; Next  bulding
 
 	;
 	; Second Part
 	; Draw obstacles (pilars)
 	;
 
-	ldx #70 	; Start at x=70 (off screen) => once again. We change pur playfield
-				; while scrolling, so we have to hurry ahead ang change things before
+	ldx #75 	; Start at x=75 (off screen) => once again. We change pur playfield
+				; while ing, so we have to hurry ahead ang change things before
 				; they apear on screen.....
 pp0
 	lda #4		; Each pilar is 4 bytes wide
@@ -864,7 +931,7 @@ pp2
 	bne pp1
 	txa			; Next pilar
 	clc
-	adc #10		; Space between pilars
+	adc space	; Space between pilars
 				; CHANGE THIS, TO DRAW MORE OR LESS PILARS
 	tax
 	cpx #184	; All pilars? That is the case when
@@ -874,7 +941,7 @@ pp2
 	; Now we insert windows in our pilars
 	;
 
-	ldx #70		; once again, we start off screen
+	ldx #75		; once again, we start off screen
 gety			
 	lda 53770	; First= get random y- pos 
 	cmp #10		; a>10?
@@ -886,7 +953,7 @@ pp01
 	lda #4		; Window has same width as pilar
 	sta wide
 pp02
-	lda #5		; Window is 5 bytes heigth
+	lda window	; Window heigth
 				; CHANGE THIS TO INCREASE/ DECREASE DIFFICULTY
 	sta length
 	lda yp
@@ -902,7 +969,7 @@ pp03
 	bne pp02
 	txa			; Next window
 	clc
-	adc #10		; SPACE BETWEEN PILARS	
+	adc space	; SPACE BETWEEN PILARS	
 	tax
 	cpx #188	; All pilars? That is the case when
 	bcc gety	; xpos> 188?
@@ -924,7 +991,7 @@ pp03
 ; y-reg	= ypos
 ; a		= Char
 ;
-; Zeropage: zp6
+; Zeropage: zp7
 
 zeichen	.byte 0
 xr4		.byte 0
@@ -936,27 +1003,27 @@ plot
 	
 	sta zeichen		; Save character
 	lda #<screen	; Init pointer at screen ram
-	sta zp6			
+	sta zp7		
 	lda #>screen
-	sta zp6+1
+	sta zp7+1
 	
 	cpy #0		; ypos equals 0, that is easy, jump
 	beq set		; to our set- routine, we don't have to calcualte line- adress
 p1	
-	lda zp6		; Get pointer at screen ram
+	lda zp7		; Get pointer at screen ram
 	clc			; Now calculate adress of line from given y- pos
 	adc #bytes	; The slow way :-)
-	sta zp6				
-	lda zp6+1
+	sta zp7				
+	lda zp7+1
 	adc #0
-	sta zp6+1
+	sta zp7+1
 	dey
 	bne p1
 set
 	txa
 	tay
 	lda zeichen
-	sta (zp6),y
+	sta (zp7),y
 	
 	ldx xr4		; Get registers back
 	ldy yr4
@@ -1016,7 +1083,9 @@ dli1
 	lda #14		; Color for bit combination: 11
 	sta colpf2s
 	lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
-	sta colpf3s
+	clc			; The only object on screen with that color is our flag that marks
+	adc level	; the begining of the next level. We change that color every new
+	sta colpf3s	; level to visualize that event :-)
 
 	; Draw sky
 
@@ -1066,14 +1135,11 @@ dlout
 ; Call: 
 ; delta= Amount of points to be added to current score
 ;
-; Zeropage: zp3
-;
 
 points
 	.byte "0000000"
 delta
-	.byte 0
-	
+	.byte 0	
 xr5
 	.byte 0
 yr5
@@ -1123,13 +1189,9 @@ showscor
 	sty yr5
 	ldy #7			; Number of digits
 	ldx #0
-	lda #<scorelin	; That's the adress where
-	sta zp3			; score will be stored (displayed
-	lda #>scorelin	; if it is the screen ram area :-)
-	sta zp3+1
 ss
 	lda points,x	; Output- loop
-	sta (zp3),y
+	sta scorelin,y
 	inx
 	iny
 	cpx #7
@@ -1202,7 +1264,7 @@ dltitel							;Titel Screen
 :3	.byte gr1
 :5	.byte 112
 	
-:3	.byte gr0
+:13	.byte gr0
 
 	.byte $41,a(dltitel)
 	
@@ -1211,17 +1273,31 @@ titel
 	.byte "                    "
 	.byte "   press <start>    "
 	.byte "                    "
+	
 	.byte "           RetroZock 2014               "
 	.byte "          www.retrozock.com             "
 	.byte "   Source code available at:GitHub      "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                                        "
+	.byte "                     V x.x // 27.7.2014 "
+	
+	
+	
 	
 ;	
 ; Antic program for our playfield
 ;
 
-	org 6000
+	org 8000
 	
-bytes	equ 240						; Our playfield is 240 bytes wide
+bytes	equ 249							; Our playfield is 249 bytes wide
 
 dlgame						 	
 	.byte $70+128						; Start of Antic programm for our playfield			
@@ -1361,7 +1437,9 @@ chset12
 :8		.byte 171															; Solid green block			//11
 :8		.byte 64															; Flag pole 				//12
 	    .byte 76	,	127	,	127	,	127	,	127	,	127	,	127	,	76  ; Flag part 	1			//13
-		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14	    		
+		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14
+		.byte 85	,	85	,	65	,	65	,	65	,	85	,	85	,	85  ; Building part with window //15
+			    		
 							
 ;
 ; Screen- ram of playfield
