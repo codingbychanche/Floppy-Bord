@@ -3,9 +3,9 @@
 ;
 ; Another Bird- Conversion
 ;
-; BF 24.7.2014
+; BF 
 ;
-; Vx.x // 24.7.2014
+; Vx.x // 31.7.2014
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -111,6 +111,9 @@ level
 titelscr
 	jsr clpm		; Clear player 0 
 
+	lda #9	
+	sta $d01e		; Clear all collision registers
+
 	lda #<dltitel	; Show titel screen
 	sta dlptr	
 	lda #>dltitel
@@ -148,10 +151,7 @@ begin
 	jsr showscor	; Show score
 
 	lda #0			; Bird is alive!
-	sta kill
-	
-	lda #9	
-	sta $d01e		; Clear all collision registers		
+	sta kill	
 	
 	lda #0			; Flag: Scroll routine alters that to 1 if the entire playfield
 	sta seqend		; is scrolled and has reached the right border....		
@@ -176,11 +176,6 @@ begin
 	sta msg+2
 	
 	jsr pminit		; Init sprites
-
-	lda #3			; Init Pokey
-	sta $d20f		; SKCTL
-	lda #0		 
-	sta $d208		; AUDCTL
 wt
 	lda 644			; Wait for trigger
 	bne wt
@@ -199,7 +194,7 @@ wt
 	lda #184		; Number of bytes to be scrolled
 	sta blocks   	
 	
-	ldy #<scroll	;Scroll Routine im Immediate VBI
+	ldy #<scroll	;Scroll Routine: Immediate VBI
 	ldx #>scroll
 	lda #6
 	jsr $e45c
@@ -215,8 +210,12 @@ main
 	lda $d004		; Check collision reg. for Player 0 (our bird)
 	beq next		; with background of playfield
 	lda #1			; Collision!=> kill bird
-	sta kill				
-next							
+	sta kill	
+next
+	lda kill		; Check if bird has died
+	cmp #1
+	beq death		; Yes!	
+					
 	lda seqend		;Scroll sequence end? 
 	beq scrollon	;No, scroll on=> VBI remains on!
 	
@@ -244,9 +243,9 @@ incsc
 	jsr showscor	
 	jsr wtt			; Wait!	
 
-	lda $d004		; Check collision reg. for Player 0 (our bird)
-	bne death		; with background of playfield
-					; if so, jumpt to death routine :(
+	lda kill		; Check if bird has died
+	cmp #1
+	beq death		; Yes!
 	dex				; Still alive!				
 	bne incsc		; Increase score!
 
@@ -331,7 +330,7 @@ scroll
 	sta a
 	
 	lda #0			; Enable collison (clear collision registers)
-	sta $d01e
+	sta $d01e				
 
 	dec wait		; Wait= the bigger, the slower our screen scrolls
 	beq s11			; Do scrolling		
@@ -413,7 +412,6 @@ lll01
 	lda #1			; Message=> scroll sequence over => next level and reset playfield
 	sta seqend							
 out	
-	
 	ldx xr
 	ldy yr
 	lda a
@@ -550,12 +548,8 @@ l12
 	
 	lda #%10000111
 	sta $d201		; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
-	lda #13			; Freq.
+	lda #15			; Freq.
 	sta $d200		; AUDF1
-
-	lda #35			; Freq
-	sta $d200
-	
 
 	lda frame		; Trigger pressed! Already 3 frames shown?
 	cmp #3					
@@ -580,9 +574,6 @@ down
 	lda #1							
 	sta kill
 ee2
-	lda #9	
-	sta 53278		; Clear all collision registers		
-	
 	ldx xrr			; Write x- and y- reg. back
 	ldy yrr		
 	
@@ -635,12 +626,23 @@ cl1
 ; This tabel holds values for number of pillars and window height
 ; You can change the difficulty of the game..... 
 
+	; Height of window in pilar, first value is for level 1, second value for....
+
 wheight
-	.byte	9,7,4,7,7,6,6,6,6,6,6,6,6,6,6,6
-	.byte   5,5,5,5,5,5,4,5,5,5,5,5,5,5,5,5
+	.byte	7,6,5,7,7,7,7,7,7,7
+	.byte	6,6,6,6,6,6,6,6,6,6
+	.byte   5,5,5,5,5,5,4,5,5,5
+	.byte   5,5,5,5,5,5,5,5,5,5
+	.byte   4,4,4,4,4,4,4,4,4,4
+	
+	; Space between pillars. Same as above
+
 dist
-	.byte 	6,7,15,6,6,7,7,7,7,7,7,7,7,7,7,7
-	.byte	8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+	.byte 	10,10,10,5,10,10,10,10,10,10
+	.byte	10,10,10,10,9,9,9,9,9,9
+	.byte 	8,8,8,8,8,8,8,8,8,8,8,8
+	.byte   7,7,7,7,7,7,7,7,7,7,7,7
+	.byte   5,5,5,5,5,5,5,5,5,5,5,5
 	
 space	
 	.byte 8					; Space between pillars
@@ -1137,7 +1139,7 @@ dlout
 ;
 
 points
-	.byte "0000000"
+	.byte "000000"
 delta
 	.byte 0	
 xr5
@@ -1159,7 +1161,7 @@ score
 	rts
 
 sl0
-	ldx #6
+	ldx #5
 
 sl1
 	lda points,x	; Get figure
@@ -1286,7 +1288,7 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                     V x.x // 27.7.2014 "
+	.byte "                     V x.x // 31.7.2014 "
 	
 	
 	
@@ -1297,7 +1299,7 @@ titel
 
 	org 8000
 	
-bytes	equ 249							; Our playfield is 249 bytes wide
+bytes	equ 248							; Our playfield is 249 bytes wide
 
 dlgame						 	
 	.byte $70+128						; Start of Antic programm for our playfield			
@@ -1417,6 +1419,8 @@ chset
 ; Charset data
 ;
 ; For: Text (Atari Basic-) text modes 12 and 13 
+;
+; They are not ordered :(
 ;
 
 	org 16384
