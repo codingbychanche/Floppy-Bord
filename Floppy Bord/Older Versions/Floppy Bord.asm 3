@@ -5,7 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0B // 10.08.2014
+; Vx.x // 31.7.2014
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -47,27 +47,27 @@ DSKTMOT	EQU $306
 
 ; PM GRAFIK
 
-PMADR	EQU $B800 
-PMCNTL	EQU $D01D 
+PMADR	EQU $B800 ;PM SPEICHER
+PMCNTL	EQU $D01D ;PM GRAFIK EIN/AUS
 
-HPOSP0	EQU $D000 
+HPOSP0	EQU $D000 ;X POS PLAYER 1
 HPOSP1	EQU $D001
 HPOSP2	EQU $D002
 HPOSP3	EQU $D003
 
-SIZEP0	EQU $D008 
+SIZEP0	EQU $D008 ;GROESE PLAYER 1
 SIZEP1	EQU $D009
 SIZEP2	EQU $D00A
 SIZEP3	EQU $D00B
 
-COLPM0	EQU 704   
+COLPM0	EQU 704   ;FARBE PLAYER 1
 COLPM1	EQU 705
 COLPM2	EQU 706
 COLPM3	EQU 707
 
-PMBASE	EQU $D407
+PMBASE	EQU $D407 ;BASISADRESS
 
-GRACTL	EQU $D01D 
+GRACTL	EQU $D01D ;PM CONTROLREG
 
 ; Zeropage
 
@@ -78,15 +78,14 @@ zp4		equ $e6
 zp5		equ	$e8
 zp6		equ $ea
 zp7		equ $ec
-zp8		equ $ee
 
 ; Parameter
 
-maxlin	equ 20		; # of rows of playfield
-bytlin	equ 39		; byte/ row
-screens	equ 6		; playfield consists of 6 screens
+maxlin	equ 20		;Maximale Anzahl Zeilen des Spielebildschirms
+bytlin	equ 39		;Bytes je Zeile
+screens	equ 6		;6 komplette Bildschirme sollen gescrollt werden
 
-; Keyboard
+; TASTATUR
 
 CONSOL	EQU 53279
 
@@ -111,9 +110,6 @@ level
 
 titelscr
 	jsr clpm		; Clear player 0 
-
-	lda #0			; We start at level 0... sorry, actually it is level 1....
-	sta level	
 
 	lda #9	
 	sta $d01e		; Clear all collision registers
@@ -145,7 +141,7 @@ st
 
 begin
 	lda #0			; Screen off. It will be turned on in 'pminit'
-	sta 559			; It is much nicer this way, so we won't notice what is happening when playfield is initialized...
+	sta 559			; It is much nicer this way, so we won't notice waht is happening when playfield is initialized...
 	
 	lda #0			; Background color= black, we do that here, so we
 	sta colbak		; don't have to take care later within dli- routine (which would complicate things...)
@@ -179,11 +175,6 @@ begin
 	lda #>message
 	sta msg+2
 	
-	lda #<poem		; Re- init zp8 with startin adress of
-	sta zp8			; text containing our poem
-	lda #>poem
-	sta zp8+1
-	
 	jsr pminit		; Init sprites
 wt
 	lda 644			; Wait for trigger
@@ -196,7 +187,7 @@ wt
 	lda #7
 	jsr $e45c
 	
-	lda #2			; Delay for scrolling
+	lda #1			; Delay for scrolling
 	sta wait
 	lda #3			; Color clocks for fine scroll
 	sta clocks
@@ -208,11 +199,23 @@ wt
 	lda #6
 	jsr $e45c
 	
+	lda #0			; We start at level 0... sorry, actually it is level 1....
+	sta level	
+	
 ;
 ; Main Loop
 ;
 
-main		
+main	
+	lda $d004		; Check collision reg. for Player 0 (our bird)
+	beq next		; with background of playfield
+	lda #1			; Collision!=> kill bird
+	sta kill	
+next
+	lda kill		; Check if bird has died
+	cmp #1
+	beq death		; Yes!	
+					
 	lda seqend		;Scroll sequence end? 
 	beq scrollon	;No, scroll on=> VBI remains on!
 	
@@ -227,7 +230,7 @@ main
 	
 	inc level		; Next level	
 	lda level
-	cmp #32			; If = 32, we start over
+	cmp #32			; If = 10, we start over
 	bne goon
 	lda #0
 	sta level
@@ -239,36 +242,20 @@ incsc
 	jsr score
 	jsr showscor	
 	jsr wtt			; Wait!	
+
+	lda kill		; Check if bird has died
+	cmp #1
+	beq death		; Yes!
 	dex				; Still alive!				
 	bne incsc		; Increase score!
 
-	lda zp8
-	sta msg+1
-	lda zp8+1
-	sta msg+2
+scrollon	
+	lda kill		; Bird still alive? We have to check for death- message from
+	beq notdeath	; scroll  routine. Has our bird died? =>kill=0 means no
 	
-	clc				; Display next line of poem
-	lda zp8
-	adc #20
-	sta zp8
-	lda zp8+1
-	adc #0
-	sta zp8+1
-scrollon					
-	jmp main		; Bird is alive. Repeat main loop
-	
-;
-; Empty VBI
-;
-
-vbi_imm_off
-	jmp $e45f
-vbi_deff_off
-	jmp $e462
-
-;
-; Death Code
-;
+	;
+	; Death Code
+	;
 
 death
 	ldy #<vbi_imm_off	; Bird is death!
@@ -307,6 +294,18 @@ trig
 	bne trig		; and, if predded =>
 	jmp titelscr	; show titel = > this game is over!	
 	
+notdeath						
+	jmp main		; Bird is alive. Repeat main loop
+	
+;
+; Empty VBI
+;
+
+vbi_imm_off
+	jmp $e45f
+vbi_deff_off
+	jmp $e462
+	
 ;
 ; Do Scroll => Immidiate VBI
 ;
@@ -328,7 +327,17 @@ a	.byte 0
 scroll
 	stx xr			; Save registers
 	sty yr
-	sta a		
+	sta a
+	
+	lda #0			; Enable collison (clear collision registers)
+	sta $d01e				
+
+	dec wait		; Wait= the bigger, the slower our screen scrolls
+	beq s11			; Do scrolling		
+	ldx xr			; Dont't scroll
+	ldy yr			; Get registers back
+	lda a			; and
+	jmp $e462		; Leave VBI 
 s11
 	lda #1			; Reset wait
 	sta wait	
@@ -378,30 +387,30 @@ s1
 	lda #184		; Yes!
 	sta blocks		; reset # of screens/ playfield (184= 4 Screens, that is the # of bytes/ row of our playfield 
 
-	lda #<(adtab+1)	; adtab contains adresses of the first byte of each row of our playfield	
-	sta zp2			
-	lda #>(adtab+1)	
+	lda #<(adtab+1)	;Zeiger auf Adresstabelle		
+	sta zp2			;welche die Startadressen des Spielbildschirms
+	lda #>(adtab+1)	;enthï¿½lt in zp- Register 2
 	sta zp2+1
 	
-	lda #<(z0+1)	; zp points to lms of antic programm	
-	sta zp			 
-	lda #>(z0+1)	
+	lda #<(z0+1)	;Zeiger auf Bildadresse in Zeile 0		
+	sta zp			;der Display- List des Spiele-
+	lda #>(z0+1)	;bildschirms in zp- Register 1
 	sta zp+1
 
-	ldx #20			;20 rows
+	ldx #20			;20 Zeilen
 	ldy #0
 lll01
-	lda (zp2),y		; Get adress of screen ram from table
-	sta (zp),y		; put it into lms of antic programm, low byte
+	lda (zp2),y		;low- Byte
+	sta (zp),y
 	iny
-	lda (zp2),y		; Same as above for high byte
+	lda (zp2),y		;High- Byte
 	sta (zp),y
 	iny
 	iny
 	dex
-	bne lll01		; All rows done?
-	lda #1			; Inform main that scroll sequence is done, start all over 
-	sta seqend		; and increase score					
+	bne lll01		; All adresses? => if so
+	lda #1			; Message=> scroll sequence over => next level and reset playfield
+	sta seqend							
 out	
 	ldx xr
 	ldy yr
@@ -442,7 +451,7 @@ pminit
 	sta 623
 	
 	;
-	; Draw borders for our
+	; First thing we do, we draw borders for our
 	; playfield: Player 1 serves as left, player 2 as right border
 	;
 
@@ -498,14 +507,8 @@ waitc
 
 movebird
 	stx xrr			; Save registers
-	sty yrr			
+	sty yrr						
 	
-	lda $d004		; Check collision reg. for Player 0 (our bird)
-	cmp #0
-	beq next33		; with background of playfield
-	jmp death	
-				
-next33	
 	lda frame		; Get index of frame
 	asl				; We are dealing with words, not bytes => multiply index by two
 	tax				; to get low- and then high byte from adress table 'framet'
@@ -564,12 +567,12 @@ skip2
 	dec ypos		; Below max heigth, decrease y- pos => move bird higher
 	jmp ee2			; skip downward movement
 down	
-	lda ypos		; Too low?
-	cmp #100
-	bne e2			; No!
-	jmp death		; Yes, dieeeeeeeeeee!
-e2
 	inc ypos		; Trigger not pressed, move bird lower
+	lda ypos
+	cmp #100		; As soon as bird reaches bottom of playfield
+	bne ee2			; let him die => GAME OVER
+	lda #1							
+	sta kill
 ee2
 	ldx xrr			; Write x- and y- reg. back
 	ldy yrr		
@@ -594,26 +597,27 @@ cl1
 ;
 ; Game- Screen initialization
 ;
-; Principle of operation:
+; Prinzip:
+; Wir haben insgesammt 5 Spielebildschirme die endlos gescrollt werden und nach jedem
+; Durchgang neu gezeichnet werden
 ;
 ; +---+---+---+---+---+ 
-; | 1 | 2 | 3 | 4 | 5 |   => Playfield consists of 5 screens, each 48 bytes wide
+; | 1 | 2 | 3 | 4 | 5 |   => Spielebildschirme
 ; +--+---+---+---+---+
 ;
-; 1:Initial conditions: Screens 1 and 5 are twins, means the contain exactly the same picture
+; 1:Startbedingung: Bildschirm 1 und 6 sind leer
 ; 
-; 2:Screens 2 trough 4 contain random playfield data
+; 2:Auf Spielbildschirm 2 bis 5 werden die Spielfelddaten
+; gezeichnet
 ;
-; 3:Scroll playfield until right border of 5th screen is reached
+; 3:Es wird bis Bildschirm 6 gescrollt
 ;
-; 4:Erase screens 2 trough 4. The player will not notice, because we are showing 
-; screen 4 at that time
+; 4: Alle Bildschirme werden gelï¿½scht, da nun der sowieso leere
+; Bildschirm 5 angezeigt wird, merk das der Spieler nich :-)
 ;
-; 5:Change pointer at screen ram to adress of screen 1, in that case - again - the player won't notice anything
-; strange happening on the screen, because screen 5 - the one we have just shown - looks exactly the same
-; as screen 1, the screen which apears within 1/50 sec on CRT. To fast dor our brain :-)
+; 5: Der Zeiger auf die Display-List wird auf Bildschirm 1 verbogen
 ;
-; 7:Continue with step 1
+; 7: Wir fahren mit 1 fort 
 ; 
 ; Zeropage: zp5
 ;			zp6
@@ -625,20 +629,20 @@ cl1
 	; Height of window in pilar, first value is for level 1, second value for....
 
 wheight
-	.byte	7,6,5,4,7,7,7,7,7,7,7,7
-	.byte	7,6,5,7,7,7,7,7,7,7,7,7
-	.byte   5,5,5,5,5,5,4,5,5,5,6,6
-	.byte   5,5,5,5,5,5,5,5,5,5,5,5
-	.byte   4,4,4,4,4,4,4,4,4,4,4,4
+	.byte	7,6,5,7,7,7,7,7,7,7
+	.byte	6,6,6,6,6,6,6,6,6,6
+	.byte   5,5,5,5,5,5,4,5,5,5
+	.byte   5,5,5,5,5,5,5,5,5,5
+	.byte   4,4,4,4,4,4,4,4,4,4
 	
-	; ......space between pillars. Same as above
+	; Space between pillars. Same as above
 
 dist
-	.byte 	10,10,10,10,10,10,10,10,10
-	.byte	8,8,8,8,8,8,8,8,8,8,8,8
+	.byte 	10,10,10,5,10,10,10,10,10,10
+	.byte	10,10,10,10,9,9,9,9,9,9
 	.byte 	8,8,8,8,8,8,8,8,8,8,8,8
-	.byte   8,8,8,8,8,8,8,8,8,8,8,8
-	.byte   10,10,10,10,10,10,10,10,10
+	.byte   7,7,7,7,7,7,7,7,7,7,7,7
+	.byte   5,5,5,5,5,5,5,5,5,5,5,5
 	
 space	
 	.byte 8					; Space between pillars
@@ -703,9 +707,9 @@ screeninit
 	lda #>(adtab+1)	; first screen
 	sta zp5+1
 	
-	lda #<(z0+1)	; Pointer to LMS command of Antic program		
-	sta zp6			; That is where we put the start adresses 
-	lda #>(z0+1)	; of every singele line from 'adtab'
+	lda #<(z0+1)	; Zeiger auf Bildadresse in Zeile 0		
+	sta zp6			; der Display- List des Spiele-
+	lda #>(z0+1)	; bildschirms in zp- Register 1
 	sta zp6+1
 
 	ldx #20			; 20 rows
@@ -722,7 +726,7 @@ lll0
 	bne lll0		; All rows?
 
 	;
-	; Get number of pillars (obstacles) and height of window / pillar
+	; Get number of pillars (obstacles) and height of window per pillar
 	;
 	
 	ldx level
@@ -743,7 +747,7 @@ lll0
 	;
 
 	lda #<screen	; Pointer on screen RAM
-	sta zp6			; Store it in zero page
+	sta zp6			; Store in zero page
 	lda #>screen
 	sta zp6+1
 	
@@ -757,7 +761,7 @@ cll2
 	cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
 	bne cll2		; Next x- pos
 	iny				; Next row
-	cpy #21			; Until all 20 rows are done
+	cpy #20			; Until all 20 rows are done
 	bne cll1	
 	
 	;
@@ -786,13 +790,13 @@ lli1
 	cpx #240
 	bne lli1
 	
-	ldx #60		; Draw bottom of screen.....
+	ldx #4		; Draw bottom of screen.....
 	ldy #18		; mother earth :-)
 	lda #7
 lli2
 	jsr plot
 	inx
-	cpx #185
+	cpx #230
 	bne lli2
 	
 	;
@@ -814,7 +818,7 @@ ppp2
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #21
 	bne ppp2	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -848,7 +852,7 @@ ppp22
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #21
 	bne ppp22	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -872,28 +876,35 @@ flag2
 	
 	; Draw random screen
 	; x pos 60 to 144 is the area of our playfield
-	; we do not see, when scroling is reset and starts at screen 1 again.
+	; we do not see, when ing is reset
 	;
-	; City Background....
+	; First Part= City Background....
 	
 	ldx #65
 getlen
 	lda 53770
 	cmp #18		; a>18?
 	bcs getlen	; yes!
-	cmp #14 	; no. a<14?
+	cmp #14 	; no. a<10?
 	bcc getlen  ; no!
 	
 	tay
-	lda #6
 drw
+	lda 53770
+	cmp #160
+	bne nowin
+	lda #15		; Draw part of building with window
+	jmp ddr
+nowin
+	lda #6		; Draw part of building with window
+ddr
 	jsr plot
 	iny			
 	cpy #18
 	bne drw		; Draw until we reach bottom of playfield
 	inx
 	cpx #184	; Draw until we reach end of playfield (right border)
-	bne getlen	; Next  building
+	bne getlen	; Next  bulding
 
 	;
 	; Second Part
@@ -1051,7 +1062,7 @@ dli
 	sta colpf2s
 	lda #155
 	sta colpf3s
-	lda #14		; Bright white for the background
+	lda #14		; Bright wite for the background
 	sta wsync
 	sta colbaks ; Ende of screen area for score display
 
@@ -1083,8 +1094,8 @@ dli1
 	ldx #15		; Draw Background
 	lda #127	; Bright blue
 dd1
-	sta wsync	; Wait until scanline is finished
-	sta colbaks ; Init background color reg.
+	sta wsync	; Init background color reg.
+	sta colbaks
 	ldy #75		; This determins the height of each color cycle
 dd2
 	dey
@@ -1104,12 +1115,14 @@ dc1
 	sta colbaks
 	ldy #19
 dc2
-	dey			; Height of each color cycle
+	dey			; Heigh of each color cycle
 	bne dc2
 	clc
 	adc #1
 	dex
 	bne dc1
+
+
 dlout
 	pla			; Get registers back
 	tay
@@ -1207,22 +1220,6 @@ cl
 	rts
 	
 ;
-; Little Dirty Debugger
-; Obsolete, game runs perfectly now :-)
-; Use this to show any parameter you want't 
-; It works fine as long it's not bigger than 16......
-;
-
-fig
-	.byte "0123456789ABVDEF"
-	
-debug
-	ldx level
-	lda fig,x
-	sta scorelin
-	rts
-	
-;
 ; Wait
 ; Sometimes our code is to fast........
 ;
@@ -1236,7 +1233,7 @@ wtt
 
 	ldx #30
 ww0	
-	ldy #195
+	ldy #200
 ww1	
 	dey
 	bne ww1
@@ -1272,6 +1269,7 @@ dltitel							;Titel Screen
 :13	.byte gr0
 
 	.byte $41,a(dltitel)
+	
 titel
 	.byte "  BORED OF FLOPPY   "
 	.byte "                    "
@@ -1290,14 +1288,18 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                     V 1.0 // 10.08.2014"	
+	.byte "                     V x.x // 31.7.2014 "
+	
+	
+	
+	
 ;	
 ; Antic program for our playfield
 ;
 
-	org $2328
+	org 8000
 	
-bytes	equ 246							; Our playfield is 249 bytes wide
+bytes	equ 248							; Our playfield is 249 bytes wide
 
 dlgame						 	
 	.byte $70+128						; Start of Antic programm for our playfield			
@@ -1441,58 +1443,14 @@ chset12
 	    .byte 76	,	127	,	127	,	127	,	127	,	127	,	127	,	76  ; Flag part 	1			//13
 		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14
 		.byte 85	,	85	,	65	,	65	,	65	,	85	,	85	,	85  ; Building part with window //15
-	
-;
-; A poem
-;
-
-poem
-	.byte "oh have i surely...."
-	.byte "..slipped the bonds."
-	.byte "..of earth and...   "
-	.byte "danced the skies...."
-	.byte "on laughter silvered"
-	.byte "wings               "
-	.byte "sunward i climbed   "
-	.byte "and joined the      "	
-	.byte "tumbeling mirth     "
-	.byte "of sun splid clouds "
-	.byte "and done hundred    "
-	.byte "things you have not "
-	.byte "dreamed of --       "
-	.byte "wheeled and soared  "
-	.byte "and swung high in   "
-	.byte "the sunlit silence  "
-	.byte "hov'ring there      "
-	.byte "i chased the        "
-	.byte "souting wind        "
-	.byte "along and flung     "
-	.byte "my eager craft      "
-	.byte "throgh footless     "
-	.byte "halls of air.       "
-	.byte "up up the long      "
-	.byte "delirious burning   "
-	.byte "blue........        "
-	.byte "i've topped the     "
-	.byte "windswept heights   "
-	.byte "with easy grace     "
-	.byte "where never lark or "
-	.byte "even eagle flew.    "
-	.byte "and while, with     "
-	.byte "with silent lifting "
-	.byte "mind i've trod the  "
-	.byte "heigh untresspassed "
-	.byte "canctity of space   "
-	.byte "put out my hand and "
-	.byte "touced the d«face   "
-	.byte "of god.             "    		
+			    		
 							
 ;
 ; Screen- ram of playfield
 ;
 
 screen
-	org $4e20
+	org 20000
 
 
 
