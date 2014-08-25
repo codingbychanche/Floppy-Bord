@@ -5,7 +5,11 @@
 ;
 ; BF 
 ;
-; V1.0B // 10.08.2014
+; V1.0.1B // 25.08.2014
+; 
+; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
+;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
+;				Digit 3=> Is increased, wehn non visible changes are made (e.g. source code optimized)
 ;
 ; Style hint: 5 Tab's for inline comments!
 ;
@@ -378,28 +382,29 @@ s1
 	lda #184		; Yes!
 	sta blocks		; reset # of screens/ playfield (184= 4 Screens, that is the # of bytes/ row of our playfield 
 
-	lda #<(adtab+1)	; adtab contains adresses of the first byte of each row of our playfield	
-	sta zp2			
-	lda #>(adtab+1)	
-	sta zp2+1
+	;lda #<(adtab+1)	; adtab contains adresses of the first byte of each row of our playfield	
+	;sta zp2			
+	;lda #>(adtab+1)	
+	;sta zp2+1
 	
-	lda #<(z0+1)	; zp points to lms of antic programm	
-	sta zp			 
-	lda #>(z0+1)	
-	sta zp+1
+	;lda #<(z0+1)	; zp points to lms of antic programm	
+	;sta zp			 
+	;lda #>(z0+1)	
+	;sta zp+1
 
-	ldx #20			;20 rows
-	ldy #0
+	;ldx #20			;20 rows
+	;ldy #0
 lll01
-	lda (zp2),y		; Get adress of screen ram from table
-	sta (zp),y		; put it into lms of antic programm, low byte
-	iny
-	lda (zp2),y		; Same as above for high byte
-	sta (zp),y
-	iny
-	iny
-	dex
-	bne lll01		; All rows done?
+	;lda (zp2),y	; Get adress of screen ram from table
+	;sta (zp),y		; put it into lms of antic programm, low byte
+	;iny
+	;lda (zp2),y	; Same as above for high byte
+	;sta (zp),y
+	
+	;iny
+	;iny
+	;dex
+	;bne lll01		; All rows done?
 	lda #1			; Inform main that scroll sequence is done, start all over 
 	sta seqend		; and increase score					
 out	
@@ -698,24 +703,32 @@ screeninit
 	tya
 	pha
 
-	lda #<(adtab+1)	; Pointer to adress table containing
-	sta zp5			; adresses of lines in screen ram of 
-	lda #>(adtab+1)	; first screen
-	sta zp5+1
+	;lda #<(adtab+1)	; Pointer to adress table containing
+	;sta zp5			; adresses of lines in screen ram of 
+	;lda #>(adtab+1)	; first screen
+	;sta zp5+1
 	
-	lda #<(z0+1)	; Pointer to LMS command of Antic program		
-	sta zp6			; That is where we put the start adresses 
-	lda #>(z0+1)	; of every singele line from 'adtab'
-	sta zp6+1
+	;lda #<(z0+1)	; Pointer to LMS command of Antic program		
+	;sta zp6			; That is where we put the start adresses 
+	;lda #>(z0+1)	; of every singele line from 'adtab'
+	;sta zp6+1
 
 	ldx #20			; 20 rows
 	ldy #0
 lll0
-	lda (zp5),y		;low- Byte
-	sta (zp6),y
+	;lda (zp5),y		;low- Byte
+	;sta (zp6),y
+	;iny
+	;lda (zp5),y		;High- Byte
+	;sta (zp6),y
+	;iny
+	;iny
+	;dex
+	lda adtab+1,y
+	sta z0+1,y
 	iny
-	lda (zp5),y		;High- Byte
-	sta (zp6),y
+	lda adtab+1,y
+	sta z0+1,y
 	iny
 	iny
 	dex
@@ -1290,7 +1303,7 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                     V 1.0 // 10.08.2014"	
+	.byte "                   V 1.0.1B// 10.08.2014"	
 ;	
 ; Antic program for our playfield
 ;
