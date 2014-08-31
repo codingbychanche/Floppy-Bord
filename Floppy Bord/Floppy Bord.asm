@@ -334,8 +334,6 @@ scroll
 	sty yr
 	sta a		
 s11
-	lda #1			; Reset wait
-	sta wait	
 	lda clocks		; Fine Scroll?
 	beq hard		; No! Do hard scroll
 	dec clocks		; Do fine scroll	
@@ -382,29 +380,7 @@ s1
 	lda #184		; Yes!
 	sta blocks		; reset # of screens/ playfield (184= 4 Screens, that is the # of bytes/ row of our playfield 
 
-	;lda #<(adtab+1)	; adtab contains adresses of the first byte of each row of our playfield	
-	;sta zp2			
-	;lda #>(adtab+1)	
-	;sta zp2+1
-	
-	;lda #<(z0+1)	; zp points to lms of antic programm	
-	;sta zp			 
-	;lda #>(z0+1)	
-	;sta zp+1
-
-	;ldx #20			;20 rows
-	;ldy #0
 lll01
-	;lda (zp2),y	; Get adress of screen ram from table
-	;sta (zp),y		; put it into lms of antic programm, low byte
-	;iny
-	;lda (zp2),y	; Same as above for high byte
-	;sta (zp),y
-	
-	;iny
-	;iny
-	;dex
-	;bne lll01		; All rows done?
 	lda #1			; Inform main that scroll sequence is done, start all over 
 	sta seqend		; and increase score					
 out	
@@ -668,12 +644,12 @@ col
 dummy	equ 0						; a, well, a dummy.....
 	
 adtab
-	.byte dummy,a(screen)				; Row 1
-	.byte dummy,a(screen+1*bytes)
-	.byte dummy,a(screen+2*bytes)
-	.byte dummy,a(screen+3*bytes)
-	.byte dummy,a(screen+4*bytes)
-	.byte dummy,a(screen+5*bytes)
+	.byte dummy,a(screen)			; Row 1
+	.byte dummy,a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
+	.byte dummy,a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
+	.byte dummy,a(screen+3*bytes)	; the structure of our antic program.
+	.byte dummy,a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
+	.byte dummy,a(screen+5*bytes)	; instruction
 	.byte dummy,a(screen+6*bytes)
 	.byte dummy,a(screen+7*bytes)
 	.byte dummy,a(screen+8*bytes)
@@ -687,7 +663,7 @@ adtab
 	.byte dummy,a(screen+16*bytes)
 	.byte dummy,a(screen+17*bytes)
 	.byte dummy,a(screen+18*bytes)
-	.byte dummy,a(screen+19*bytes)		; Row 20
+	.byte dummy,a(screen+19*bytes)	; Row 20
 
 screeninit	
 
@@ -703,36 +679,18 @@ screeninit
 	tya
 	pha
 
-	;lda #<(adtab+1)	; Pointer to adress table containing
-	;sta zp5			; adresses of lines in screen ram of 
-	;lda #>(adtab+1)	; first screen
-	;sta zp5+1
-	
-	;lda #<(z0+1)	; Pointer to LMS command of Antic program		
-	;sta zp6			; That is where we put the start adresses 
-	;lda #>(z0+1)	; of every singele line from 'adtab'
-	;sta zp6+1
-
 	ldx #20			; 20 rows
 	ldy #0
 lll0
-	;lda (zp5),y		;low- Byte
-	;sta (zp6),y
-	;iny
-	;lda (zp5),y		;High- Byte
-	;sta (zp6),y
-	;iny
-	;iny
-	;dex
-	lda adtab+1,y
-	sta z0+1,y
+	lda adtab+1,y	; Get adress from table
+	sta z0+1,y		; Put it into lms of antic program => low byte
 	iny
-	lda adtab+1,y
+	lda adtab+1,y	; Same for high byte
 	sta z0+1,y
 	iny
 	iny
 	dex
-	bne lll0		; All rows?
+	bne lll0		; All rows done?
 
 	;
 	; Get number of pillars (obstacles) and height of window / pillar
@@ -1105,7 +1063,7 @@ dd2
 	
 	sec			; Blue get's darker
 	sbc #1
-	dex			; Unttil we reach the lower third
+	dex			; Until we reach the lower third
 	bne dd1		; of our playfield
 
 	; Draw ground
