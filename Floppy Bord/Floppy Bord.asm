@@ -5,7 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.1B // 25.08.2014
+; V1.0.2B // 14.09.2014 => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -98,7 +98,7 @@ CONSOL	EQU 53279
 ; Start
 ;
 
-	org $0700
+	org $afc8
 	
 	jmp titelscr
 kill
@@ -1261,17 +1261,18 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.1B// 10.08.2014"	
+	.byte "                   V 1.0.2B// 14.9.2014 "	
 ;	
 ; Antic program for our playfield
 ;
 
-	org $2328
+	org $3830							; Should always start at a 4k boundary
+
 	
 bytes	equ 246							; Our playfield is 249 bytes wide
 
 dlgame						 	
-	.byte $70+128						; Start of Antic programm for our playfield			
+	.byte 112+128						; Start of Antic programm for our playfield			
 	.byte 112
 	.byte $40+gr1,a(scorelin)			; Gr.1 display. Tha's where we can see our score
 	.byte 112							; and other important messages.....
@@ -1316,7 +1317,7 @@ m1
 ; For: Text (Atari Basic-) text modes 0,1,2 
 ;
 
-	 org 12288
+	 org $4400
 chset
 	.byte $00,$00,$00,$00,$00,$00,$00,$00
 	.byte $02,$02,$02,$02,$02,$02,$02,$02
@@ -1392,7 +1393,8 @@ chset
 ; They are not ordered :(
 ;
 
-	org 16384
+		org $4800														
+		
 chset12
 :8		.byte 0																; Empty						//0
  		.byte 127,127,127,31,31,7,7,1										; Cloud tile 1, bottom left //1
@@ -1463,7 +1465,7 @@ poem
 ;
 
 screen
-	org $4e20
+	org $7530
 
 
 
