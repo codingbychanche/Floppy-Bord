@@ -5,7 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.2B // 14.09.2014 => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
+; V1.0.3B // 16.09.2014 
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -419,7 +419,7 @@ pminit
 	lda #2
 	sta gractl
 
-	lda #%00111101
+	lda #%00000001	; Gprior= Bit 1=> Player overlap all playfield colors
 	sta 623
 	
 	;
@@ -435,9 +435,13 @@ plo1
 	dex
 	bne plo1
 	
+	lda #1
+	sta $d009
+	lda #1
+	sta $d00a
 	lda #40
 	sta hposp1
-	lda #208
+	lda #200
 	sta hposp2
 	
 	lda #0
@@ -1069,7 +1073,7 @@ dd2
 	; Draw ground
 
 	ldx #15		; Draw ground
-	lda #194	; Start with dark green
+	lda #34		; Start with dark brown
 dc1
 	sta wsync
 	sta colbaks
@@ -1081,6 +1085,9 @@ dc2
 	adc #1
 	dex
 	bne dc1
+	
+	lda #0		; Lower border= black!
+	sta colbaks
 dlout
 	pla			; Get registers back
 	tay
@@ -1261,12 +1268,13 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.2B// 14.9.2014 "	
+	.byte "                   V 1.0.3B// 16.9.2014 "	
 ;	
 ; Antic program for our playfield
 ;
 
-	org $3830							; Should always start at a 4k boundary
+	org 14384							; Should always start at a 4k boundary
+
 
 	
 bytes	equ 246							; Our playfield is 249 bytes wide
@@ -1305,9 +1313,9 @@ z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
 	.byte $41,a(dlgame)				 	; End of display- list, start all over again....
 	
 scorelin								; Contents of screen ram for status display
-	.byte "score               "
+	.byte " score              "
 message
-	.byte "FLY LITTLE BIRD..   "
+	.byte " FLY LITTLE BIRD..  "
 m1
 	.byte "    GAME OVER       "
 	
@@ -1420,45 +1428,45 @@ chset12
 ;
 
 poem
-	.byte "oh have i surely...."
-	.byte "..slipped the bonds."
-	.byte "..of earth and...   "
-	.byte "danced the skies...."
-	.byte "on laughter silvered"
-	.byte "wings               "
-	.byte "sunward i climbed   "
-	.byte "and joined the      "	
-	.byte "tumbeling mirth     "
-	.byte "of sun splid clouds "
-	.byte "and done hundred    "
-	.byte "things you have not "
-	.byte "dreamed of --       "
-	.byte "wheeled and soared  "
-	.byte "and swung high in   "
-	.byte "the sunlit silence  "
-	.byte "hov'ring there      "
-	.byte "i chased the        "
-	.byte "souting wind        "
-	.byte "along and flung     "
-	.byte "my eager craft      "
-	.byte "throgh footless     "
-	.byte "halls of air.       "
-	.byte "up up the long      "
-	.byte "delirious burning   "
-	.byte "blue........        "
-	.byte "i've topped the     "
-	.byte "windswept heights   "
-	.byte "with easy grace     "
-	.byte "where never lark or "
-	.byte "even eagle flew.    "
-	.byte "and while, with     "
-	.byte "with silent lifting "
-	.byte "mind i've trod the  "
-	.byte "heigh untresspassed "
-	.byte "canctity of space   "
-	.byte "put out my hand and "
-	.byte "touced the d«face   "
-	.byte "of god.             "    		
+	.byte "  oh have i surely.."
+	.byte "  slipped the bonds."
+	.byte "  of earth and...   "
+	.byte "  danced the skies.."
+	.byte "  on laughter       "
+	.byte "  silvered wings    "
+	.byte "  sunward i climbed "
+	.byte "  and joined the    "	
+	.byte "  tumbeling mirth of"
+	.byte "  sun splid clouds  "
+	.byte "  and done hundred  "
+	.byte "  things you have   "
+	.byte "  not dreamed of -- "
+	.byte "  wheeled and soared"
+	.byte "  and swung high in "
+	.byte "  the sunlit silence"
+	.byte "  hov'ring there    "
+	.byte "  i chased the      "
+	.byte "  souting wind      "
+	.byte "  along and flung   "
+	.byte "  my eager craft    "
+	.byte "  throgh footless   "
+	.byte "  halls of air.     "
+	.byte "  up up the long    "
+	.byte "  delirious burning "
+	.byte "  blue........      "
+	.byte "  i've topped the   "
+	.byte "  windswept heights "
+	.byte "  with easy grace   "
+	.byte "  where never lark  "
+	.byte "  or even eagle flew"
+	.byte "  and while, with   "
+	.byte " with silent lifting"
+	.byte "  mind i've trod the"
+	.byte " heigh untresspassed"
+	.byte "  canctity of space "
+	.byte "  put out my hand   "
+	.byte "  and touced the    "
+	.byte "  d«face of god.    "    		
 							
 ;
 ; Screen- ram of playfield
