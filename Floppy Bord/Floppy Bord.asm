@@ -5,7 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.3B // 16.09.2014 
+; V1.0.3B // 20.09.2014 
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -128,9 +128,9 @@ titelscr
 	sta dlptr+1
 
 	lda #>chset		; Activate char set for graphics 0,1,2
-	sta 756
+	sta $02f4
 	
-	lda #14			; Set colors for titel, backrground of (Atari Basic) mode 1 and 2 
+	lda #$0e		; Set colors for titel, backrground of (Atari Basic) mode 1 and 2 
 	sta colbak
 	lda #200		; Color for lower case characters (Atari Basic) mode 1 and 2
 	sta colpf1
@@ -207,6 +207,9 @@ wt
 	lda #184		; Number of bytes to be scrolled
 	sta blocks   	
 	
+	ldx #20			; 20 rows
+	ldy #0
+	
 	ldy #<scroll	;Scroll Routine: Immediate VBI
 	ldx #>scroll
 	lda #6
@@ -225,7 +228,7 @@ main
 	;
 	
 	jsr screeninit
-	
+
 	lda #0			; Message=> scroll playfield from start
 	sta seqend	
 	
@@ -308,7 +311,7 @@ gover
 	sta msg+2
 trig	
 	lda	644			; Wait for trigger key
-	bne trig		; and, if predded =>
+	bne trig		; and, if pressed =>
 	jmp titelscr	; show titel = > this game is over!	
 	
 ;
@@ -329,11 +332,23 @@ xr	.byte 0			; Save place for our registers
 yr	.byte 0
 a	.byte 0
 
+rst	.byte
+
 scroll
 	stx xr			; Save registers
 	sty yr
-	sta a		
+	sta a	
+	
+	lda rst
+	bne s11
+	
+	;
+	; Reset Playfield= Begin scrolling at screen 1
+	; To do this, we change the screen- ram adresses in our display list
+	; line by line by replacing them with our in "adtab" saved adresses
+	; 
 s11
+	
 	lda clocks		; Fine Scroll?
 	beq hard		; No! Do hard scroll
 	dec clocks		; Do fine scroll	
@@ -382,7 +397,8 @@ s1
 
 lll01
 	lda #1			; Inform main that scroll sequence is done, start all over 
-	sta seqend		; and increase score					
+	sta seqend		; and increase score
+	sta rst					
 out	
 	ldx xr
 	ldy yr
@@ -610,7 +626,7 @@ cl1
 	; Height of window in pilar, first value is for level 1, second value for....
 
 wheight
-	.byte	7,6,5,4,7,7,7,7,7,7,7,7
+	.byte	10,10,10,10,10
 	.byte	7,6,5,7,7,7,7,7,7,7,7,7
 	.byte   5,5,5,5,5,5,4,5,5,5,6,6
 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
@@ -619,7 +635,7 @@ wheight
 	; ......space between pillars. Same as above
 
 dist
-	.byte 	10,10,10,10,10,10,10,10,10
+	.byte 	8,8,8,8,8,8,8,8,8,8,8,8,8
 	.byte	8,8,8,8,8,8,8,8,8,8,8,8
 	.byte 	8,8,8,8,8,8,8,8,8,8,8,8
 	.byte   8,8,8,8,8,8,8,8,8,8,8,8
@@ -641,6 +657,13 @@ wide
 length
 	.byte 0
 col
+	.byte 0
+	
+aa
+	.byte 0
+xx	
+	.byte 0
+yy	
 	.byte 0
 
 ; Adress table
@@ -670,22 +693,17 @@ adtab
 	.byte dummy,a(screen+19*bytes)	; Row 20
 
 screeninit	
+	
+	sta aa
+	stx xx
+	sty yy
 
-	;
-	; Reset Playfield= Begin scrolling at screen 1
-	; To do this, we change the screen- ram adresses in our display list
-	; line by line by replacing them with our in "adtab" saved adresses
-	; 
-
-	pha				; Save registers
-	txa
-	pha
-	tya
-	pha
 
 	ldx #20			; 20 rows
 	ldy #0
+
 lll0
+
 	lda adtab+1,y	; Get adress from table
 	sta z0+1,y		; Put it into lms of antic program => low byte
 	iny
@@ -694,12 +712,13 @@ lll0
 	iny
 	iny
 	dex
+	
 	bne lll0		; All rows done?
 
 	;
 	; Get number of pillars (obstacles) and height of window / pillar
 	;
-	
+
 	ldx level
 	lda wheight,x
 	sta window
@@ -732,7 +751,7 @@ cll2
 	cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
 	bne cll2		; Next x- pos
 	iny				; Next row
-	cpy #21			; Until all 20 rows are done
+	cpy #20			; Until all 20 rows are done
 	bne cll1	
 	
 	;
@@ -940,12 +959,10 @@ pp03
 	cpx #188	; All pilars? That is the case when
 	bcc gety	; xpos> 188?
 	
-	pla			; Get registers back
-	tay
-	pla
-	tax
-	pla
-	
+	lda aa
+	ldx xx
+	ldy yy
+
 	rts			; Return
 
 ;
@@ -962,10 +979,34 @@ pp03
 zeichen	.byte 0
 xr4		.byte 0
 yr4		.byte 0
+aa4		.byte 0
+
+adtab2
+	.byte a(screen)			; Row 1
+	.byte a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
+	.byte a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
+	.byte a(screen+3*bytes)	; the structure of our antic program.
+	.byte a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
+	.byte a(screen+5*bytes)	; instruction
+	.byte a(screen+6*bytes)
+	.byte a(screen+7*bytes)
+	.byte a(screen+8*bytes)
+	.byte a(screen+9*bytes)
+	.byte a(screen+10*bytes)
+	.byte a(screen+11*bytes)
+	.byte a(screen+12*bytes)
+	.byte a(screen+13*bytes)
+	.byte a(screen+14*bytes)
+	.byte a(screen+15*bytes)
+	.byte a(screen+16*bytes)
+	.byte a(screen+17*bytes)
+	.byte a(screen+18*bytes)
+	.byte a(screen+19*bytes)	; Row 20
 
 plot	
 	stx xr4		; Save registers
 	sty yr4
+	sta aa4
 	
 	sta zeichen		; Save character
 	lda #<screen	; Init pointer at screen ram
@@ -975,16 +1016,15 @@ plot
 	
 	cpy #0		; ypos equals 0, that is easy, jump
 	beq set		; to our set- routine, we don't have to calcualte line- adress
-p1	
-	lda zp7		; Get pointer at screen ram
-	clc			; Now calculate adress of line from given y- pos
-	adc #bytes	; The slow way :-)
-	sta zp7				
-	lda zp7+1
-	adc #0
+	
+	tya
+	asl
+	tay
+	lda adtab2,y
+	sta zp7
+	iny
+	lda adtab2,y
 	sta zp7+1
-	dey
-	bne p1
 set
 	txa
 	tay
@@ -993,6 +1033,7 @@ set
 	
 	ldx xr4		; Get registers back
 	ldy yr4
+	lda aa4
 	
 	rts	
 	
@@ -1073,7 +1114,7 @@ dd2
 	; Draw ground
 
 	ldx #15		; Draw ground
-	lda #34		; Start with dark brown
+	lda #195	; Start with dark green
 dc1
 	sta wsync
 	sta colbaks
@@ -1268,21 +1309,17 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.3B// 16.9.2014 "	
+	.byte "                   V 1.0.4B// 22.9.2014 "	
 ;	
 ; Antic program for our playfield
-;
+;  
 
-	org 14384							; Should always start at a 4k boundary
+bytes	equ 246							; Our playfield is 246 bytes wide
 
-
-	
-bytes	equ 246							; Our playfield is 249 bytes wide
-
+	org 32768							; Should always start at a 4k boundary
 dlgame						 	
-	.byte 112+128						; Start of Antic programm for our playfield			
-	.byte 112
-	.byte $40+gr1,a(scorelin)			; Gr.1 display. Tha's where we can see our score
+	.byte 112,112+128					; Start of Antic programm for our playfield			
+	.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
 	.byte 112							; and other important messages.....
 msg
 	.byte $40+gr1,a(message)			; Message line, tell the player what's going on
@@ -1309,7 +1346,6 @@ z16	.byte $40+gr12,a(screen+16*bytes)
 z17	.byte $40+gr12,a(screen+17*bytes)
 z18	.byte $40+gr12,a(screen+18*bytes)
 z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
-
 	.byte $41,a(dlgame)				 	; End of display- list, start all over again....
 	
 scorelin								; Contents of screen ram for status display
@@ -1401,7 +1437,7 @@ chset
 ; They are not ordered :(
 ;
 
-		org $4800														
+		org 18432														
 		
 chset12
 :8		.byte 0																; Empty						//0
@@ -1474,6 +1510,9 @@ poem
 
 screen
 	org $7530
+	
+screen2
+	org $9c40
 
 
 

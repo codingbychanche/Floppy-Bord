@@ -1,0 +1,1526 @@
+mads 1.9.3
+     1 				; Floppy Bord
+     2 				; PAL- Version
+     3 				;
+     4 				; Another Bird- Conversion
+     5 				;
+     6 				; BF 
+     7 				;
+     8 				; V1.0.3B // 20.09.2014 
+     9 				; 
+    10 				; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
+    11 				;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
+    12 				;				Digit 3=> Is increased, wehn non visible changes are made (e.g. source code optimized)
+    13 				;
+    14 				; Style hint: 5 Tab's for inline comments!
+    15 				;
+    16
+    17 				; ANTIC
+    18
+    19 = 0230			DLPTR	EQU 560	
+    20 = 0200			VDLIST	EQU $200	 
+    21 = D40E			NMIEN	EQU $D40E
+    22 = D40A			WSYNC	EQU $D40A
+    23 = D40B			VCOUNT	EQU $D40B
+    24 = 0014			RTCLK	EQU $14
+    25 = 022F			SDMCTL	EQU 559
+    26
+    27 				; FARBEN
+    28
+    29 = 02C4			COLPF0	EQU 708  
+    30 = 02C5			COLPF1	EQU 709 
+    31 = 02C6			COLPF2	EQU 710
+    32 = 02C7			COLPF3	EQU 711
+    33 = 02C8			COLBAK	EQU 712
+    34
+    35 = D016			COLPF0S	EQU $D016 
+    36 = D017			COLPF1S	EQU $D017
+    37 = D018			COLPF2S	EQU $D018
+    38 = D019			COLPF3S	EQU $D019
+    39 = D01A			COLBAKS	EQU $D01A
+    40
+    41 				; DISK I/O
+    42
+    43 = E453			DSKINV	EQU $E453  
+    44 = 0302			DSKCMD	EQU $302	  
+    45 = 030A			DSKAUX1	EQU $30A      
+    46 = 0300			DSKDEV	EQU $300   
+    47 = 0301			DSKUNIT	EQU $301	  
+    48 = 0308			DSKBY	EQU $308   
+    49 = 0304			DSKBUFF	EQU $304   
+    50 = 0306			DSKTMOT	EQU $306 
+    51
+    52 				; PM GRAFIK
+    53
+    54 = B800			PMADR	EQU $B800 
+    55 = D01D			PMCNTL	EQU $D01D 
+    56
+    57 = D000			HPOSP0	EQU $D000 
+    58 = D001			HPOSP1	EQU $D001
+    59 = D002			HPOSP2	EQU $D002
+    60 = D003			HPOSP3	EQU $D003
+    61
+    62 = D008			SIZEP0	EQU $D008 
+    63 = D009			SIZEP1	EQU $D009
+    64 = D00A			SIZEP2	EQU $D00A
+    65 = D00B			SIZEP3	EQU $D00B
+    66
+    67 = 02C0			COLPM0	EQU 704   
+    68 = 02C1			COLPM1	EQU 705
+    69 = 02C2			COLPM2	EQU 706
+    70 = 02C3			COLPM3	EQU 707
+    71
+    72 = D407			PMBASE	EQU $D407
+    73
+    74 = D01D			GRACTL	EQU $D01D 
+    75
+    76 				; Zeropage
+    77
+    78 = 00E0			ZP		equ $e0
+    79 = 00E2			zp2		equ $e2
+    80 = 00E4			zp3		equ $e4
+    81 = 00E6			zp4		equ $e6
+    82 = 00E8			zp5		equ	$e8
+    83 = 00EA			zp6		equ $ea
+    84 = 00EC			zp7		equ $ec
+    85 = 00EE			zp8		equ $ee
+    86
+    87 				; Parameter
+    88
+    89 = 0014			maxlin	equ 20		; # of rows of playfield
+    90 = 0027			bytlin	equ 39		; byte/ row
+    91 = 0006			screens	equ 6		; playfield consists of 6 screens
+    92
+    93 				; Keyboard
+    94
+    95 = D01F			CONSOL	EQU 53279
+    96
+    97 				;
+    98 				; Start
+    99 				;
+   100
+   101 					org $afc8
+   102 					
+   103 FFFF> AFC8-B8D0> 4C CF + 	jmp titelscr
+   104 AFCB			kill
+   105 AFCB 00				.byte 0			; Killflag. 1 means, player (bird) has died.....
+   106 AFCC			wait
+   107 AFCC 00				.byte 0			; Delay for srolling, the bigger, the slower
+   108 AFCD			seqend
+   109 AFCD 00				.byte 0			; Flag. If this equals to 1, scroll sequence has ended...
+   110 AFCE			level
+   111 AFCE 00				.byte 0			; Yes, it's a Level Counter
+   112 				;
+   113 				; Display Titel
+   114 				;
+   115
+   116 AFCF			titelscr
+   117 AFCF 20 A4 B2			jsr clpm		; Clear player 0 
+   118
+   119 AFD2 A9 00			lda #0			; We start at level 0... sorry, actually it is level 1....
+   120 AFD4 8D CE AF			sta level	
+   121
+   122 AFD7 A9 09			lda #9	
+   123 AFD9 8D 1E D0			sta $d01e		; Clear all collision registers
+   124
+   125 AFDC A9 5B			lda #<dltitel	; Show titel screen
+   126 AFDE 8D 30 02			sta dlptr	
+   127 AFE1 A9 B6			lda #>dltitel
+   128 AFE3 8D 31 02			sta dlptr+1
+   129
+   130 AFE6 A9 44			lda #>chset		; Activate char set for graphics 0,1,2
+   131 AFE8 8D F4 02			sta $02f4
+   132 					
+   133 AFEB A9 0E			lda #$0e		; Set colors for titel, backrground of (Atari Basic) mode 1 and 2 
+   134 AFED 8D C8 02			sta colbak
+   135 AFF0 A9 C8			lda #200		; Color for lower case characters (Atari Basic) mode 1 and 2
+   136 AFF2 8D C5 02			sta colpf1
+   137 AFF5 A9 0E			lda #14			; Background for (Atari Basic) mode 0
+   138 AFF7 8D C6 02			sta colpf2
+   139 AFFA A9 C4			lda #196		; Color for upper case characters (Atari Basic) mode 1 and 2
+   140 AFFC 8D C4 02			sta colpf0
+   141 AFFF			st
+   142 AFFF AD 1F D0			lda consol		; Now wait until the start key is pressed
+   143 B002 29 01			and #1
+   144 B004 F0 03			beq begin
+   145 B006 4C FF AF			jmp st	
+   146 				;
+   147 				; Start Game
+   148 				;
+   149
+   150 B009			begin
+   151 B009 A9 00			lda #0			; Screen off. It will be turned on in 'pminit'
+   152 B00B 8D 2F 02			sta 559			; It is much nicer this way, so we won't notice what is happening when playfield is initialized...
+   153 					
+   154 B00E A9 00			lda #0			; Background color= black, we do that here, so we
+   155 B010 8D C8 02			sta colbak		; don't have to take care later within dli- routine (which would complicate things...)
+   156 					
+   157 B013 20 6A B3			jsr screeninit	; Game- screen init (draw playfield, init antic- program)
+   158 B016 20 1F B6			jsr clscor		; Clear old score
+   159 B019 20 02 B6			jsr showscor	; Show score
+   160
+   161 B01C A9 00			lda #0			; Bird is alive!
+   162 B01E 8D CB AF			sta kill	
+   163 					
+   164 B021 A9 00			lda #0			; Flag: Scroll routine alters that to 1 if the entire playfield
+   165 B023 8D CD AF			sta seqend		; is scrolled and has reached the right border....		
+   166 B026 A9 32			lda #50			; Bird will apear at line 50 on the screen
+   167 B028 8D 10 B2			sta ypos
+   168
+   169 B02B A9 43			lda #<dli   	; Display- List- Interrupt on
+   170 B02D 8D 00 02			sta vdlist
+   171 B030 A9 B5			lda #>dli
+   172 B032 8D 01 02			sta vdlist+1
+   173 B035 A9 C0			lda #$C0
+   174 B037 8D 0E D4			sta NMIEN
+   175 					
+   176 B03A A9 00			lda #<dlgame	; Show playfield		
+   177 B03C 8D 30 02			sta dlptr						
+   178 B03F A9 80			lda #>dlgame
+   179 B041 8D 31 02			sta dlptr+1
+   180 					
+   181 B044 A9 5D			lda #<message	; Show message below score, just for fun
+   182 B046 8D 07 80			sta msg+1
+   183 B049 A9 80			lda #>message
+   184 B04B 8D 08 80			sta msg+2
+   185 					
+   186 B04E A9 80			lda #<poem		; Re- init zp8 with startin adress of
+   187 B050 85 EE			sta zp8			; text containing our poem
+   188 B052 A9 48			lda #>poem
+   189 B054 85 EF			sta zp8+1
+   190 					
+   191 B056 20 92 B1			jsr pminit		; Init sprites
+   192 B059			wt
+   193 B059 AD 84 02			lda 644			; Wait for trigger
+   194 B05C D0 FB			bne wt
+   195 					
+   196 B05E A9 00			lda #0			; Init frame- counter for bird animation
+   197 B060 8D 0F B2			sta frame
+   198 B063 A0 14			ldy #<movebird	; Activate deffered VBI for player (bird) movement
+   199 B065 A2 B2			ldx #>movebird				
+   200 B067 A9 07			lda #7
+   201 B069 20 5C E4			jsr $e45c
+   202 					
+   203 B06C A9 02			lda #2			; Delay for scrolling
+   204 B06E 8D CC AF			sta wait
+   205 B071 A9 03			lda #3			; Color clocks for fine scroll
+   206 B073 8D 1B B1			sta clocks
+   207 B076 A9 B8			lda #184		; Number of bytes to be scrolled
+   208 B078 8D 1A B1			sta blocks   	
+   209 					
+   210 B07B A2 14			ldx #20			; 20 rows
+   211 B07D A0 00			ldy #0
+   212 					
+   213 B07F A0 20			ldy #<scroll	;Scroll Routine: Immediate VBI
+   214 B081 A2 B1			ldx #>scroll
+   215 B083 A9 06			lda #6
+   216 B085 20 5C E4			jsr $e45c
+   217 					
+   218 				;
+   219 				; Main Loop
+   220 				;
+   221
+   222 B088			main		
+   223 B088 AD CD AF			lda seqend		;Scroll sequence end? 
+   224 B08B F0 41			beq scrollon	;No, scroll on=> VBI remains on!
+   225 					
+   226 					;
+   227 					; Init new playfield
+   228 					;
+   229 					
+   230 B08D 20 6A B3			jsr screeninit
+   231
+   232 B090 A9 00			lda #0			; Message=> scroll playfield from start
+   233 B092 8D CD AF			sta seqend	
+   234 					
+   235 B095 EE CE AF			inc level		; Next level	
+   236 B098 AD CE AF			lda level
+   237 B09B C9 20			cmp #32			; If = 32, we start over
+   238 B09D D0 05			bne goon
+   239 B09F A9 00			lda #0
+   240 B0A1 8D CE AF			sta level
+   241 B0A4			goon	
+   242 B0A4 A2 64			ldx #100
+   243 B0A6			incsc
+   244 B0A6 A9 01			lda #1			; Increase score!	
+   245 B0A8 8D D1 B5			sta delta		; Show Score
+   246 B0AB 20 D4 B5			jsr score
+   247 B0AE 20 02 B6			jsr showscor	
+   248 B0B1 20 46 B6			jsr wtt			; Wait!	
+   249 B0B4 CA				dex				; Still alive!				
+   250 B0B5 D0 EF			bne incsc		; Increase score!
+   251
+   252 B0B7 A5 EE			lda zp8
+   253 B0B9 8D 07 80			sta msg+1
+   254 B0BC A5 EF			lda zp8+1
+   255 B0BE 8D 08 80			sta msg+2
+   256 					
+   257 B0C1 18				clc				; Display next line of poem
+   258 B0C2 A5 EE			lda zp8
+   259 B0C4 69 14			adc #20
+   260 B0C6 85 EE			sta zp8
+   261 B0C8 A5 EF			lda zp8+1
+   262 B0CA 69 00			adc #0
+   263 B0CC 85 EF			sta zp8+1
+   264 B0CE			scrollon					
+   265 B0CE 4C 88 B0			jmp main		; Bird is alive. Repeat main loop
+   266 					
+   267 				;
+   268 				; Empty VBI
+   269 				;
+   270
+   271 B0D1			vbi_imm_off
+   272 B0D1 4C 5F E4			jmp $e45f
+   273 B0D4			vbi_deff_off
+   274 B0D4 4C 62 E4			jmp $e462
+   275
+   276 				;
+   277 				; Death Code
+   278 				;
+   279
+   280 B0D7			death
+   281 B0D7 A0 D1			ldy #<vbi_imm_off	; Bird is death!
+   282 B0D9 A2 B0			ldx #>vbi_imm_off	; Stop bird movement= Bird VBI
+   283 B0DB A9 06			lda #6				; VBI is now re- routet
+   284 B0DD 20 5C E4			jsr $e45c
+   285 					
+   286 B0E0 A0 D4			ldy #<vbi_deff_off	; Same for deffered VBI
+   287 B0E2 A2 B0			ldx #>vbi_deff_off
+   288 B0E4 A9 07			lda #7
+   289 B0E6 20 5C E4			jsr $e45c
+   290
+   291 B0E9 A9 87			lda #%10000111	; BOOOOM- sound :-)
+   292 B0EB 8D 01 D2			sta $d201		; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
+   293 B0EE A9 19			lda #25			; Freq.
+   294 B0F0 8D 00 D2			sta $d200		; AUDF1
+   295 					
+   296 B0F3 A2 10			ldx #16
+   297 B0F5			deathsound			; Play sound
+   298 B0F5 8A				txa
+   299 B0F6 2D 01 D2			and $d201
+   300 B0F9 8D 01 D2			sta $d201
+   301 B0FC 20 46 B6			jsr wtt
+   302 B0FF CA				dex
+   303 B100 D0 F3			bne deathsound
+   304 					
+   305 B102 A9 00			lda #0			; Silent!
+   306 B104 8D 01 D2			sta $d201	
+   307 B107			gover	
+   308 B107 A9 71			lda #<m1		; Inform the player that he has just died
+   309 B109 8D 07 80			sta msg+1		; (in case he won't belive)
+   310 B10C A9 80			lda #>m1
+   311 B10E 8D 08 80			sta msg+2
+   312 B111			trig	
+   313 B111 AD 84 02			lda	644			; Wait for trigger key
+   314 B114 D0 FB			bne trig		; and, if pressed =>
+   315 B116 4C CF AF			jmp titelscr	; show titel = > this game is over!	
+   316 					
+   317 				;
+   318 				; Do Scroll => Immidiate VBI
+   319 				;
+   320 				; Zero Page: zp
+   321 				;			 zp2
+   322 				;
+   323
+   324 B119			lines	
+   325 B119 00				.byte 0			; Number of rows to be scrolled
+   326 B11A			blocks
+   327 B11A 00				.byte 0			; Blocks= One TV- Screen in Gr. 12 mode= 40 Bytes x 20 rows
+   328 B11B			clocks
+   329 B11B 00				.byte 0			; Finescroll, number of color clocks
+   330
+   331 B11C 00			xr	.byte 0			; Save place for our registers
+   332 B11D 00			yr	.byte 0
+   333 B11E 00			a	.byte 0
+   334
+   335 B11F 00			rst	.byte
+   336
+   337 B120			scroll
+   338 B120 8E 1C B1			stx xr			; Save registers
+   339 B123 8C 1D B1			sty yr
+   340 B126 8D 1E B1			sta a	
+   341 					
+   342 B129 AD 1F B1			lda rst
+   343 B12C D0 00			bne s11
+   344 					
+   345 					;
+   346 					; Reset Playfield= Begin scrolling at screen 1
+   347 					; To do this, we change the screen- ram adresses in our display list
+   348 					; line by line by replacing them with our in "adtab" saved adresses
+   349 					; 
+   350 B12E			s11
+   351 					
+   352 B12E AD 1B B1			lda clocks		; Fine Scroll?
+   353 B131 F0 15			beq hard		; No! Do hard scroll
+   354 B133 CE 1B B1			dec clocks		; Do fine scroll	
+   355 B136 AD 1B B1			lda clocks		; Colocks=3,2,1 counting down this values scrolls		
+   356 B139 8D 04 D4			sta $d404		; character to the left
+   357 B13C AE 1C B1			ldx xr			; Write regsiters back
+   358 B13F AC 1D B1			ldy yr	
+   359 B142 AD 1E B1			lda a				
+   360 B145 4C 5F E4			jmp $e45f		; Leave VBI
+   361 B148			hard	
+   362 B148 A9 03			lda #3			; Reset fine scroll register				
+   363 B14A 8D 04 D4			sta $d404		; after chracter was moved to it's leftmost position 
+   364 B14D 8D 1B B1			sta clocks		
+   365 					
+   366 B150 A9 14			lda #20 		; We scroll 20 rows of our playfield
+   367 B152 8D 19 B1			sta lines
+   368 					
+   369 B155 A9 0B			lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
+   370 B157 85 E0			sta zp			; of line 0 of playfield (complicated? :-) Noooooooooo, just bad english :-(
+   371 B159 A9 80			lda #>(z0+1)
+   372 B15B 85 E1			sta zp+1
+   373 B15D A0 00			ldy #0
+   374 B15F			s1					
+   375 B15F B1 E0			lda (zp),y		; Get adress of row (Low)
+   376 B161 18				clc
+   377 B162 69 01			adc #1			; add => move row to the left => hardscroll
+   378 B164 91 E0			sta (zp),y				
+   379 B166 C8				iny
+   380 B167 B1 E0			lda (zp),y		; Get adress of row (High)
+   381 B169 69 00			adc #0			; Add contents of carry flag
+   382 B16B 91 E0			sta (zp),y
+   383 B16D C8				iny				; Get adress of next row 
+   384 B16E C8				iny				
+   385 B16F CE 19 B1			dec lines		; Do we have scrolled all rows of our playfield?		
+   386 B172 D0 EB			bne s1			; No!
+   387 B174 CE 1A B1			dec blocks		; All sceens of our playfield scrolled?
+   388 B177 D0 0D			bne out			; No!
+   389 					
+   390 					;
+   391 					; Re- init playfield.
+   392 					; => Scrolling beginns from the leftmost byte 
+   393 					;
+   394 					
+   395 B179 A9 B8			lda #184		; Yes!
+   396 B17B 8D 1A B1			sta blocks		; reset # of screens/ playfield (184= 4 Screens, that is the # of bytes/ row of our playfield 
+   397
+   398 B17E			lll01
+   399 B17E A9 01			lda #1			; Inform main that scroll sequence is done, start all over 
+   400 B180 8D CD AF			sta seqend		; and increase score
+   401 B183 8D 1F B1			sta rst					
+   402 B186			out	
+   403 B186 AE 1C B1			ldx xr
+   404 B189 AC 1D B1			ldy yr
+   405 B18C AD 1E B1			lda a
+   406 					
+   407 B18F 4C 5F E4			jmp $e45f		; Leave VBI
+   408
+   409 				;
+   410 				; Init PM- Graphics
+   411 				;
+   412 					
+   413 B192			pminit
+   414 B192 A9 B8			lda #pmadr/256	
+   415 B194 8D 07 D4			sta pmbase
+   416
+   417 B197 A9 FF			lda #255
+   418 B199 8D C0 02			sta colpm0
+   419
+   420 B19C A9 CC			lda #204
+   421 B19E 8D C1 02			sta colpm1
+   422
+   423 B1A1 A9 D0			lda #208
+   424 B1A3 8D C2 02			sta colpm2
+   425
+   426 B1A6 A9 D2			lda #210
+   427 B1A8 8D C3 02			sta colpm3
+   428
+   429 B1AB A9 00			lda #0
+   430 B1AD 8D 08 D0			sta sizep0
+   431
+   432 B1B0 A9 2E			lda #46
+   433 B1B2 8D 2F 02			sta sdmctl
+   434
+   435 B1B5 A9 02			lda #2
+   436 B1B7 8D 1D D0			sta gractl
+   437
+   438 B1BA A9 01			lda #%00000001	; Gprior= Bit 1=> Player overlap all playfield colors
+   439 B1BC 8D 6F 02			sta 623
+   440 					
+   441 					;
+   442 					; Draw borders for our
+   443 					; playfield: Player 1 serves as left, player 2 as right border
+   444 					;
+   445
+   446 B1BF A2 FF			ldx #255
+   447 B1C1 A9 FF			lda #$ff
+   448 B1C3			plo1
+   449 B1C3 9D 80 BA			sta pmadr+640,x
+   450 B1C6 9D 00 BB			sta pmadr+768,x
+   451 B1C9 CA				dex
+   452 B1CA D0 F7			bne plo1
+   453 					
+   454 B1CC A9 01			lda #1
+   455 B1CE 8D 09 D0			sta $d009
+   456 B1D1 A9 01			lda #1
+   457 B1D3 8D 0A D0			sta $d00a
+   458 B1D6 A9 28			lda #40
+   459 B1D8 8D 01 D0			sta hposp1
+   460 B1DB A9 C8			lda #200
+   461 B1DD 8D 02 D0			sta hposp2
+   462 					
+   463 B1E0 A9 00			lda #0
+   464 B1E2 8D C1 02			sta colpm1
+   465 B1E5 8D C2 02			sta colpm2
+   466 					
+   467 B1E8 60				rts					
+   468
+   469 				;
+   470 				; Movebird => Deffered VBI
+   471 				;
+   472 				; Zeropage: zp4
+   473 				;
+   474
+   475 					;
+   476 					; Frames for our bird
+   477 					;
+   478
+   479 B1E9			bird
+   480 B1E9 00 00 7C 42 B7 E7 + 	.byte $00,$00,$7c,$42,$b7,$e7,$d2,$92,$0c,$00
+   481 B1F3			bird1
+   482 B1F3 00 00 7C 42 B7 E7 + 	.byte $00,$00,$7c,$42,$b7,$e7,$d2,$12,$0c,$00
+   483 B1FD			bird2
+   484 B1FD 00 00 7C 42 B7 E7 + 	.byte $00,$00,$7c,$42,$b7,$e7,$12,$12,$0c,$00
+   485
+   486 B207			framet
+   487 B207 E9 B1 F3 B1 FD B1 + 	.word bird,bird1,bird2,bird1
+   488 B20F			frame
+   489 B20F 00				.byte 0
+   490 						
+   491 B210			ypos	
+   492 B210 1E				.byte 30		; Birds y- pos
+   493 					
+   494 B211 00			xrr	.byte 0			; Save place for our registers
+   495 B212 00			yrr	.byte 0
+   496
+   497 B213			waitc
+   498 B213 01				.byte 1			; Wait- counter. 
+   499
+   500 B214			movebird
+   501 B214 8E 11 B2			stx xrr			; Save registers
+   502 B217 8C 12 B2			sty yrr			
+   503 					
+   504 B21A AD 04 D0			lda $d004		; Check collision reg. for Player 0 (our bird)
+   505 B21D C9 00			cmp #0
+   506 B21F F0 03			beq next33		; with background of playfield
+   507 B221 4C D7 B0			jmp death	
+   508 								
+   509 B224			next33	
+   510 B224 AD 0F B2			lda frame		; Get index of frame
+   511 B227 0A				asl				; We are dealing with words, not bytes => multiply index by two
+   512 B228 AA				tax				; to get low- and then high byte from adress table 'framet'
+   513 B229 BD 07 B2			lda framet,x	; Now get adress of frame data from table
+   514 B22C 85 E6			sta zp4			; store in zeropage, low byte
+   515 B22E E8				inx				; move to high- byte in table
+   516 B22F BD 07 B2			lda framet,x	; Get high- byte and put in zero- page
+   517 B232 85 E7			sta zp4+1
+   518 					
+   519 B234 AE 10 B2			ldx ypos		; Get y- pos
+   520 B237 A0 09			ldy #9			; Init y- reg as index for frame data
+   521 B239			l12	
+   522 B239 B1 E6			lda (zp4),y		; Display frame, get frame- data
+   523 B23B 9D 00 BA			sta pmadr+512,x	; Write in memory area for player 0
+   524 B23E E8				inx					
+   525 B23F 88				dey				; Do so, until all 10 bytes (including the 0 at the
+   526 B240 D0 F7			bne l12			; top and bottom of frame to avoid garbage after changing vertical pos of player
+   527 					
+   528 B242 A9 64			lda #100		; Set horiz. position, always 100 :-)
+   529 B244 8D 00 D0			sta hposp0
+   530 					
+   531 B247 CE 13 B2			dec waitc		; Wait?
+   532 B24A D0 4F			bne ee2			; <>0? => yes! => do nothing
+   533
+   534 B24C A9 02			lda #2			; =0 => Reset 'waitc'	and go on
+   535 B24E 8D 13 B2			sta waitc
+   536 B251 A9 00			lda #0			; Sound off
+   537 B253 8D 01 D2			sta $d201
+   538 					
+   539 B256 AD 84 02			lda 644			; Get trigger
+   540 B259 D0 33			bne down		; Not presssed? Bird loses altitute :-)
+   541
+   542 B25B A9 03			lda #3			; Init Pokey
+   543 B25D 8D 0F D2			sta $d20f		; SKCTL
+   544 B260 A9 00			lda #0	 
+   545 B262 8D 08 D2			sta $d208		; AUDCTL
+   546 					
+   547 B265 A9 87			lda #%10000111
+   548 B267 8D 01 D2			sta $d201		; AUDC1 => Bit 765=> Distortion Bit 012=> Volume
+   549 B26A A9 0F			lda #15			; Freq.
+   550 B26C 8D 00 D2			sta $d200		; AUDF1
+   551
+   552 B26F AD 0F B2			lda frame		; Trigger pressed! Already 3 frames shown?
+   553 B272 C9 03			cmp #3					
+   554 B274 D0 08			bne skip		; No, next frame
+   555
+   556 B276 A9 00			lda #0			; Yes, reset frame- counter
+   557 B278 8D 0F B2			sta frame
+   558 B27B 4C 81 B2			jmp skip2		; Now, dont increase framecounter, skip it
+   559 B27E			skip	
+   560 B27E EE 0F B2			inc frame
+   561 B281			skip2
+   562 B281 AD 10 B2			lda ypos		; Trigger is pressed => check
+   563 B284 C9 1E			cmp #30			; if max height reached
+   564 B286 F0 13			beq ee2			; in that case, do nothing
+   565 B288 CE 10 B2			dec ypos		; Below max heigth, decrease y- pos => move bird higher
+   566 B28B 4C 9B B2			jmp ee2			; skip downward movement
+   567 B28E			down	
+   568 B28E AD 10 B2			lda ypos		; Too low?
+   569 B291 C9 64			cmp #100
+   570 B293 D0 03			bne e2			; No!
+   571 B295 4C D7 B0			jmp death		; Yes, dieeeeeeeeeee!
+   572 B298			e2
+   573 B298 EE 10 B2			inc ypos		; Trigger not pressed, move bird lower
+   574 B29B			ee2
+   575 B29B AE 11 B2			ldx xrr			; Write x- and y- reg. back
+   576 B29E AC 12 B2			ldy yrr		
+   577 					
+   578 B2A1 4C 62 E4			jmp $e462		; Leave intermediate VBI
+   579
+   580 				;
+   581 				; Clear PM- graphics => all!
+   582 				;
+   583
+   584 B2A4			clpm
+   585 B2A4 A0 FF			ldy #255
+   586 B2A6			cl1
+   587 B2A6 A9 00			lda #0
+   588 B2A8 99 00 BA			sta pmadr+512,y	; Clear player 0 (bird)
+   589 B2AB 99 64 BA			sta pmadr+612,y	; Clear player 1 (right border)
+   590 B2AE 99 00 BB			sta pmadr+768,y	; Clear player 2 (left border)
+   591 B2B1 88				dey
+   592 B2B2 D0 F2			bne cl1
+   593 B2B4 60				rts
+   594
+   595 				;
+   596 				; Game- Screen initialization
+   597 				;
+   598 				; Principle of operation:
+   599 				;
+   600 				; +---+---+---+---+---+ 
+   601 				; | 1 | 2 | 3 | 4 | 5 |   => Playfield consists of 5 screens, each 48 bytes wide
+   602 				; +--+---+---+---+---+
+   603 				;
+   604 				; 1:Initial conditions: Screens 1 and 5 are twins, means the contain exactly the same picture
+   605 				; 
+   606 				; 2:Screens 2 trough 4 contain random playfield data
+   607 				;
+   608 				; 3:Scroll playfield until right border of 5th screen is reached
+   609 				;
+   610 				; 4:Erase screens 2 trough 4. The player will not notice, because we are showing 
+   611 				; screen 4 at that time
+   612 				;
+   613 				; 5:Change pointer at screen ram to adress of screen 1, in that case - again - the player won't notice anything
+   614 				; strange happening on the screen, because screen 5 - the one we have just shown - looks exactly the same
+   615 				; as screen 1, the screen which apears within 1/50 sec on CRT. To fast dor our brain :-)
+   616 				;
+   617 				; 7:Continue with step 1
+   618 				; 
+   619 				; Zeropage: zp5
+   620 				;			zp6
+   621 				;
+   622
+   623 				; This tabel holds values for number of pillars and window height
+   624 				; You can change the difficulty of the game..... 
+   625
+   626 					; Height of window in pilar, first value is for level 1, second value for....
+   627
+   628 B2B5			wheight
+   629 B2B5 0A 0A 0A 0A 0A		.byte	10,10,10,10,10
+   630 B2BA 07 06 05 07 07 07 + 	.byte	7,6,5,7,7,7,7,7,7,7,7,7
+   631 B2C6 05 05 05 05 05 05 + 	.byte   5,5,5,5,5,5,4,5,5,5,6,6
+   632 B2D2 05 05 05 05 05 05 + 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
+   633 B2DE 04 04 04 04 04 04 + 	.byte   4,4,4,4,4,4,4,4,4,4,4,4
+   634 					
+   635 					; ......space between pillars. Same as above
+   636
+   637 B2EA			dist
+   638 B2EA 08 08 08 08 08 08 + 	.byte 	8,8,8,8,8,8,8,8,8,8,8,8,8
+   639 B2F7 08 08 08 08 08 08 + 	.byte	8,8,8,8,8,8,8,8,8,8,8,8
+   640 B303 08 08 08 08 08 08 + 	.byte 	8,8,8,8,8,8,8,8,8,8,8,8
+   641 B30F 08 08 08 08 08 08 + 	.byte   8,8,8,8,8,8,8,8,8,8,8,8
+   642 B31B 0A 0A 0A 0A 0A 0A + 	.byte   10,10,10,10,10,10,10,10,10
+   643 					
+   644 B324			space	
+   645 B324 08				.byte 8					; Space between pillars
+   646 B325			window	
+   647 B325 05				.byte 5					; Big, or small window....
+   648
+   649 				; Other important var's
+   650
+   651 B326			zeile
+   652 B326 00				.byte 0
+   653 B327			yp
+   654 B327 00				.byte 0
+   655 B328			wide 
+   656 B328 00				.byte 0
+   657 B329			length
+   658 B329 00				.byte 0
+   659 B32A			col
+   660 B32A 00				.byte 0
+   661 					
+   662 B32B			aa
+   663 B32B 00				.byte 0
+   664 B32C			xx	
+   665 B32C 00				.byte 0
+   666 B32D			yy	
+   667 B32D 00				.byte 0
+   668
+   669 				; Adress table
+   670
+   671 = 0000			dummy	equ 0						; a, well, a dummy.....
+   672 					
+   673 B32E			adtab
+   674 B32E 00 8C 4B			.byte dummy,a(screen)			; Row 1
+   675 B331 00 82 4C			.byte dummy,a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
+   676 B334 00 78 4D			.byte dummy,a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
+   677 B337 00 6E 4E			.byte dummy,a(screen+3*bytes)	; the structure of our antic program.
+   678 B33A 00 64 4F			.byte dummy,a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
+   679 B33D 00 5A 50			.byte dummy,a(screen+5*bytes)	; instruction
+   680 B340 00 50 51			.byte dummy,a(screen+6*bytes)
+   681 B343 00 46 52			.byte dummy,a(screen+7*bytes)
+   682 B346 00 3C 53			.byte dummy,a(screen+8*bytes)
+   683 B349 00 32 54			.byte dummy,a(screen+9*bytes)
+   684 B34C 00 28 55			.byte dummy,a(screen+10*bytes)
+   685 B34F 00 1E 56			.byte dummy,a(screen+11*bytes)
+   686 B352 00 14 57			.byte dummy,a(screen+12*bytes)
+   687 B355 00 0A 58			.byte dummy,a(screen+13*bytes)
+   688 B358 00 00 59			.byte dummy,a(screen+14*bytes)
+   689 B35B 00 F6 59			.byte dummy,a(screen+15*bytes)
+   690 B35E 00 EC 5A			.byte dummy,a(screen+16*bytes)
+   691 B361 00 E2 5B			.byte dummy,a(screen+17*bytes)
+   692 B364 00 D8 5C			.byte dummy,a(screen+18*bytes)
+   693 B367 00 CE 5D			.byte dummy,a(screen+19*bytes)	; Row 20
+   694
+   695 B36A			screeninit	
+   696 					
+   697 B36A 8D 2B B3			sta aa
+   698 B36D 8E 2C B3			stx xx
+   699 B370 8C 2D B3			sty yy
+   700
+   701
+   702 B373 A2 14			ldx #20			; 20 rows
+   703 B375 A0 00			ldy #0
+   704
+   705 B377			lll0
+   706
+   707 B377 B9 2F B3			lda adtab+1,y	; Get adress from table
+   708 B37A 99 0B 80			sta z0+1,y		; Put it into lms of antic program => low byte
+   709 B37D C8				iny
+   710 B37E B9 2F B3			lda adtab+1,y	; Same for high byte
+   711 B381 99 0B 80			sta z0+1,y
+   712 B384 C8				iny
+   713 B385 C8				iny
+   714 B386 CA				dex
+   715 					
+   716 B387 D0 EE			bne lll0		; All rows done?
+   717
+   718 					;
+   719 					; Get number of pillars (obstacles) and height of window / pillar
+   720 					;
+   721
+   722 B389 AE CE AF			ldx level
+   723 B38C BD B5 B2			lda wheight,x
+   724 B38F 8D 25 B3			sta window
+   725 B392 BD EA B2			lda dist,x
+   726 B395 8D 24 B3			sta space
+   727
+   728 					;
+   729 					; Clear screen 2,3,4
+   730 					; That way the player wont't notice that anythig happens on the screen.
+   731 					; Reason: Screen 5 is displayed, we don't change anything here
+   732 					; All other changes happen on screens which are not displayed
+   733 					;
+   734 					; Screen 2 starts at x = 60 that is because we change our screns while scrolling!
+   735 					; We have to hurry ahead => do changes before they apear on the visible part
+   736 					; of our screen.
+   737 					;
+   738
+   739 B398 A9 8C			lda #<screen	; Pointer on screen RAM
+   740 B39A 85 EA			sta zp6			; Store it in zero page
+   741 B39C A9 4B			lda #>screen
+   742 B39E 85 EB			sta zp6+1
+   743 					
+   744 B3A0 A0 00			ldy #0
+   745 B3A2			cll1
+   746 B3A2 A2 C0			ldx #192		; Here begins screen #5
+   747 B3A4			cll2
+   748 B3A4 A9 00			lda #0			; That's the char we plot= blank
+   749 B3A6 20 0C B5			jsr plot		; Do plot
+   750 B3A9 CA				dex				; Count backwards
+   751 B3AA E0 3C			cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
+   752 B3AC D0 F6			bne cll2		; Next x- pos
+   753 B3AE C8				iny				; Next row
+   754 B3AF C0 14			cpy #20			; Until all 20 rows are done
+   755 B3B1 D0 EF			bne cll1	
+   756 					
+   757 					;
+   758 					; Draw Obstacles
+   759 					;
+   760 					; First thing you must remember: Screen 1 and 5 have to look the same
+   761 					; if not, it is no endless ing :-) 
+   762 					; Screen 1 starts at x=4 Screen 5 starts at x=188
+   763 					;
+   764 					
+   765 B3B3 A2 03			ldx #3		; Draw top of screen (clouds)
+   766 B3B5 A0 00			ldy #0
+   767 B3B7 A9 05			lda #5
+   768 B3B9			lli
+   769 B3B9 20 0C B5			jsr plot
+   770 B3BC E8				inx
+   771 B3BD E0 F0			cpx #240
+   772 B3BF D0 F8			bne lli
+   773 					
+   774 B3C1 A2 03			ldx #3
+   775 B3C3 A0 01			ldy #1
+   776 B3C5 A9 02			lda #2
+   777 B3C7			lli1
+   778 B3C7 20 0C B5			jsr plot	
+   779 B3CA E8				inx			
+   780 B3CB E0 F0			cpx #240
+   781 B3CD D0 F8			bne lli1
+   782 					
+   783 B3CF A2 3C			ldx #60		; Draw bottom of screen.....
+   784 B3D1 A0 12			ldy #18		; mother earth :-)
+   785 B3D3 A9 07			lda #7
+   786 B3D5			lli2
+   787 B3D5 20 0C B5			jsr plot
+   788 B3D8 E8				inx
+   789 B3D9 E0 B9			cpx #185
+   790 B3DB D0 F8			bne lli2
+   791 					
+   792 					;
+   793 					; Draw first Screen
+   794 					; Screen 1 and 5 must look alike! So, actually we draw two
+   795 					; screens - exactly the same - at two different locations
+   796 					; on our playfield
+   797 					;
+   798
+   799 B3DD A2 18			ldx #24		; SCREEN 1
+   800
+   801 B3DF A9 04			lda #4		; Pilar is 4 bytes wide
+   802 B3E1 8D 28 B3			sta wide
+   803 B3E4 A9 08			lda #8		; Start color. Color will vary across width
+   804 B3E6 8D 2A B3			sta col		; to simulate some depth
+   805 B3E9			ppp1
+   806 B3E9 A0 0D			ldy #13		; Start at middle of screen
+   807 B3EB			ppp2
+   808 B3EB AD 2A B3			lda col		; Color
+   809 B3EE 20 0C B5			jsr plot	; Plot it
+   810 B3F1 C8				iny			; until we reach bottom of playfield
+   811 B3F2 C0 14			cpy #20
+   812 B3F4 D0 F5			bne ppp2	
+   813 B3F6 E8				inx			; Repeat  
+   814 B3F7 EE 2A B3			inc col     ; Next color
+   815 B3FA CE 28 B3			dec wide	; Drawn pilar until full width reached
+   816 B3FD D0 EA			bne ppp1
+   817 					
+   818 B3FF A0 0C			ldy #12		; Draw flag pole
+   819 B401 A2 1A			ldx #26
+   820 B403			flag1
+   821 B403 A9 0C			lda #12
+   822 B405 20 0C B5			jsr plot
+   823 B408 88				dey
+   824 B409 C0 08			cpy #8
+   825 B40B D0 F6			bne flag1
+   826 					
+   827 B40D A9 8D			lda #13+128	; Set flag atop
+   828 B40F 20 0C B5			jsr plot
+   829 B412 E8				inx 
+   830 B413 A9 8E			lda #14+128
+   831 B415 20 0C B5			jsr plot
+   832 					
+   833 B418 A2 D0			ldx #188+20	; SCREEN 5
+   834
+   835 B41A A9 04			lda #4		; Pilar is 4 bytes wide
+   836 B41C 8D 28 B3			sta wide
+   837 B41F A9 08			lda #8		; Start color. Color will vary across width
+   838 B421 8D 2A B3			sta col		; to simulate some depth
+   839 B424			ppp12
+   840 B424 A0 0D			ldy #13		; Start at middle of screen
+   841 B426			ppp22
+   842 B426 AD 2A B3			lda col		; Color
+   843 B429 20 0C B5			jsr plot	; Plot it
+   844 B42C C8				iny			; until we reach bottom of playfield
+   845 B42D C0 14			cpy #20
+   846 B42F D0 F5			bne ppp22	
+   847 B431 E8				inx			; Repeat  
+   848 B432 EE 2A B3			inc col     ; Next color
+   849 B435 CE 28 B3			dec wide	; Drawn pilar until full width reached
+   850 B438 D0 EA			bne ppp12
+   851 					
+   852 B43A A0 0C			ldy #12		; Draw flag pole
+   853 B43C A2 D2			ldx #188+22
+   854 B43E			flag2
+   855 B43E A9 0C			lda #12
+   856 B440 20 0C B5			jsr plot
+   857 B443 88				dey
+   858 B444 C0 08			cpy #8
+   859 B446 D0 F6			bne flag2
+   860 					
+   861 B448 A9 8D			lda #13+128	; Set flag atop. +128 for inv. char= color 5
+   862 B44A 20 0C B5			jsr plot
+   863 B44D E8				inx 
+   864 B44E A9 8E			lda #14+128
+   865 B450 20 0C B5			jsr plot
+   866 					
+   867 					; Draw random screen
+   868 					; x pos 60 to 144 is the area of our playfield
+   869 					; we do not see, when scroling is reset and starts at screen 1 again.
+   870 					;
+   871 					; City Background....
+   872 					
+   873 B453 A2 41			ldx #65
+   874 B455			getlen
+   875 B455 AD 0A D2			lda 53770
+   876 B458 C9 12			cmp #18		; a>18?
+   877 B45A B0 F9			bcs getlen	; yes!
+   878 B45C C9 0E			cmp #14 	; no. a<14?
+   879 B45E 90 F5			bcc getlen  ; no!
+   880 					
+   881 B460 A8				tay
+   882 B461 A9 06			lda #6
+   883 B463			drw
+   884 B463 20 0C B5			jsr plot
+   885 B466 C8				iny			
+   886 B467 C0 12			cpy #18
+   887 B469 D0 F8			bne drw		; Draw until we reach bottom of playfield
+   888 B46B E8				inx
+   889 B46C E0 B8			cpx #184	; Draw until we reach end of playfield (right border)
+   890 B46E D0 E5			bne getlen	; Next  building
+   891
+   892 					;
+   893 					; Second Part
+   894 					; Draw obstacles (pilars)
+   895 					;
+   896
+   897 B470 A2 4B			ldx #75 	; Start at x=75 (off screen) => once again. We change pur playfield
+   898 								; while ing, so we have to hurry ahead ang change things before
+   899 								; they apear on screen.....
+   900 B472			pp0
+   901 B472 A9 04			lda #4		; Each pilar is 4 bytes wide
+   902 B474 8D 28 B3			sta wide
+   903 B477 A9 08			lda #8		; Start color. Color will vary across width
+   904 B479 8D 2A B3			sta col		; to simulate some depth
+   905 B47C			pp1
+   906 B47C A0 01			ldy #1		; Start at top of screen, well, almost...
+   907 B47E			pp2
+   908 B47E AD 2A B3			lda col		; Color
+   909 B481 20 0C B5			jsr plot	; Plot it
+   910 B484 C8				iny			; until we reach bottom of playfield
+   911 B485 C0 14			cpy #20
+   912 B487 D0 F5			bne pp2	
+   913 B489 E8				inx			; Repeat  
+   914 B48A EE 2A B3			inc col     ; Next color
+   915 B48D CE 28 B3			dec wide	; Drawn pilar until full width reached
+   916 B490 D0 EA			bne pp1
+   917 B492 8A				txa			; Next pilar
+   918 B493 18				clc
+   919 B494 6D 24 B3			adc space	; Space between pilars
+   920 								; CHANGE THIS, TO DRAW MORE OR LESS PILARS
+   921 B497 AA				tax
+   922 B498 E0 B8			cpx #184	; All pilars? That is the case when
+   923 B49A 90 D6			bcc pp0		; xpos> 184
+   924
+   925 					; 
+   926 					; Now we insert windows in our pilars
+   927 					;
+   928
+   929 B49C A2 4B			ldx #75		; once again, we start off screen
+   930 B49E			gety			
+   931 B49E AD 0A D2			lda 53770	; First= get random y- pos 
+   932 B4A1 C9 0A			cmp #10		; a>10?
+   933 B4A3 B0 F9			bcs gety	; yes!=> to big, get another
+   934 B4A5 C9 02			cmp #2  	; no. a<0?
+   935 B4A7 90 F5			bcc gety    ; no!
+   936 B4A9 8D 27 B3			sta yp   	; y pos is between upper and lower border, save it!	
+   937 B4AC			pp01
+   938 B4AC A9 04			lda #4		; Window has same width as pilar
+   939 B4AE 8D 28 B3			sta wide
+   940 B4B1			pp02
+   941 B4B1 AD 25 B3			lda window	; Window heigth
+   942 								; CHANGE THIS TO INCREASE/ DECREASE DIFFICULTY
+   943 B4B4 8D 29 B3			sta length
+   944 B4B7 AD 27 B3			lda yp
+   945 B4BA A8				tay
+   946 B4BB			pp03	
+   947 B4BB A9 00			lda #0		; Color= blank space
+   948 B4BD 20 0C B5			jsr plot	; Plot it
+   949 B4C0 C8				iny			
+   950 B4C1 CE 29 B3			dec length	
+   951 B4C4 D0 F5			bne pp03
+   952 B4C6 E8				inx			; Repeat until we have drawn 
+   953 B4C7 CE 28 B3			dec wide	; full window 
+   954 B4CA D0 E5			bne pp02
+   955 B4CC 8A				txa			; Next window
+   956 B4CD 18				clc
+   957 B4CE 6D 24 B3			adc space	; SPACE BETWEEN PILARS	
+   958 B4D1 AA				tax
+   959 B4D2 E0 BC			cpx #188	; All pilars? That is the case when
+   960 B4D4 90 C8			bcc gety	; xpos> 188?
+   961 					
+   962 B4D6 AD 2B B3			lda aa
+   963 B4D9 AE 2C B3			ldx xx
+   964 B4DC AC 2D B3			ldy yy
+   965
+   966 B4DF 60				rts			; Return
+   967
+   968 				;
+   969 				; Plot 
+   970 				;
+   971 				; Writes any character you want, at any position in screen ram
+   972 				;
+   973 				; x-reg	= xpos
+   974 				; y-reg	= ypos
+   975 				; a		= Char
+   976 				;
+   977 				; Zeropage: zp7
+   978
+   979 B4E0 00			zeichen	.byte 0
+   980 B4E1 00			xr4		.byte 0
+   981 B4E2 00			yr4		.byte 0
+   982 B4E3 00			aa4		.byte 0
+   983
+   984 B4E4			adtab2
+   985 B4E4 8C 4B			.byte a(screen)			; Row 1
+   986 B4E6 82 4C			.byte a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
+   987 B4E8 78 4D			.byte a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
+   988 B4EA 6E 4E			.byte a(screen+3*bytes)	; the structure of our antic program.
+   989 B4EC 64 4F			.byte a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
+   990 B4EE 5A 50			.byte a(screen+5*bytes)	; instruction
+   991 B4F0 50 51			.byte a(screen+6*bytes)
+   992 B4F2 46 52			.byte a(screen+7*bytes)
+   993 B4F4 3C 53			.byte a(screen+8*bytes)
+   994 B4F6 32 54			.byte a(screen+9*bytes)
+   995 B4F8 28 55			.byte a(screen+10*bytes)
+   996 B4FA 1E 56			.byte a(screen+11*bytes)
+   997 B4FC 14 57			.byte a(screen+12*bytes)
+   998 B4FE 0A 58			.byte a(screen+13*bytes)
+   999 B500 00 59			.byte a(screen+14*bytes)
+  1000 B502 F6 59			.byte a(screen+15*bytes)
+  1001 B504 EC 5A			.byte a(screen+16*bytes)
+  1002 B506 E2 5B			.byte a(screen+17*bytes)
+  1003 B508 D8 5C			.byte a(screen+18*bytes)
+  1004 B50A CE 5D			.byte a(screen+19*bytes)	; Row 20
+  1005
+  1006 B50C			plot	
+  1007 B50C 8E E1 B4			stx xr4		; Save registers
+  1008 B50F 8C E2 B4			sty yr4
+  1009 B512 8D E3 B4			sta aa4
+  1010 					
+  1011 B515 8D E0 B4			sta zeichen		; Save character
+  1012 B518 A9 8C			lda #<screen	; Init pointer at screen ram
+  1013 B51A 85 EC			sta zp7		
+  1014 B51C A9 4B			lda #>screen
+  1015 B51E 85 ED			sta zp7+1
+  1016 					
+  1017 B520 C0 00			cpy #0		; ypos equals 0, that is easy, jump
+  1018 B522 F0 0E			beq set		; to our set- routine, we don't have to calcualte line- adress
+  1019 					
+  1020 B524 98				tya
+  1021 B525 0A				asl
+  1022 B526 A8				tay
+  1023 B527 B9 E4 B4			lda adtab2,y
+  1024 B52A 85 EC			sta zp7
+  1025 B52C C8				iny
+  1026 B52D B9 E4 B4			lda adtab2,y
+  1027 B530 85 ED			sta zp7+1
+  1028 B532			set
+  1029 B532 8A				txa
+  1030 B533 A8				tay
+  1031 B534 AD E0 B4			lda zeichen
+  1032 B537 91 EC			sta (zp7),y
+  1033 					
+  1034 B539 AE E1 B4			ldx xr4		; Get registers back
+  1035 B53C AC E2 B4			ldy yr4
+  1036 B53F AD E3 B4			lda aa4
+  1037 					
+  1038 B542 60				rts	
+  1039 					
+  1040 				;
+  1041 				; DLI
+  1042 				;
+  1043
+  1044 B543			dli
+  1045 B543 48				pha			;  Save registers
+  1046 B544 8A				txa
+  1047 B545 48				pha
+  1048 B546 98				tya
+  1049 B547 48				pha
+  1050 					
+  1051 B548 AD 0B D4			lda vcount
+  1052 B54B 0A				asl
+  1053 B54C C9 26			cmp #38
+  1054 B54E B0 21			bcs dli1	; Is electron beam at row > 38?
+  1055
+  1056 					;
+  1057 					; Set Chset and colors for score display
+  1058 					;
+  1059 					
+  1060 B550 A9 44			lda #>chset	; No! Electron beam is at line # below 38
+  1061 B552 8D 09 D4			sta $d409	; so we are still within our score display
+  1062 B555 A9 05			lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 					
+  1063 B557 8D 16 D0			sta colpf0s						
+  1064 B55A A9 14			lda #20 	; Change colors for lower case characters in (basic)mode 1,2 or 0
+  1065 B55C 8D 17 D0			sta colpf1s
+  1066 B55F A9 74			lda #116
+  1067 B561 8D 18 D0			sta colpf2s
+  1068 B564 A9 9B			lda #155
+  1069 B566 8D 19 D0			sta colpf3s
+  1070 B569 A9 0E			lda #14		; Bright white for the background
+  1071 B56B 8D 0A D4			sta wsync
+  1072 B56E 8D 1A D0			sta colbaks ; Ende of screen area for score display
+  1073
+  1074 B571			dli1								
+  1075 B571 AD 0B D4			lda vcount	; Is electron beam at row # bigger than 38?
+  1076 B574 0A				asl			; No? So we are still in area of score display
+  1077 B575 C9 26			cmp #38		; 
+  1078 B577 90 4C			bcc dlout	; Do nothing!
+  1079
+  1080 					;
+  1081 					; Set chset for playfield and playfield colors
+  1082 					;
+  1083 																
+  1084 B579 A9 48			lda #>chset12 ; Electron beam has crossed row 38 that means
+  1085 B57B 8D 09 D4			sta $d409	; we are in playfild area of our screen
+  1086 B57E A9 0A			lda #10		; Color for bit combination: 01
+  1087 B580 8D 16 D0			sta colpf0s										
+  1088 B583 A9 C8			lda #200	; Color for bit combination: 10
+  1089 B585 8D 17 D0			sta colpf1s
+  1090 B588 A9 0E			lda #14		; Color for bit combination: 11
+  1091 B58A 8D 18 D0			sta colpf2s
+  1092 B58D A9 18			lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
+  1093 B58F 18				clc			; The only object on screen with that color is our flag that marks
+  1094 B590 6D CE AF			adc level	; the begining of the next level. We change that color every new
+  1095 B593 8D 19 D0			sta colpf3s	; level to visualize that event :-)
+  1096
+  1097 					; Draw sky
+  1098
+  1099 B596 A2 0F			ldx #15		; Draw Background
+  1100 B598 A9 7F			lda #127	; Bright blue
+  1101 B59A			dd1
+  1102 B59A 8D 0A D4			sta wsync	; Wait until scanline is finished
+  1103 B59D 8D 1A D0			sta colbaks ; Init background color reg.
+  1104 B5A0 A0 4B			ldy #75		; This determins the height of each color cycle
+  1105 B5A2			dd2
+  1106 B5A2 88				dey
+  1107 B5A3 D0 FD			bne dd2
+  1108 					
+  1109 B5A5 38				sec			; Blue get's darker
+  1110 B5A6 E9 01			sbc #1
+  1111 B5A8 CA				dex			; Until we reach the lower third
+  1112 B5A9 D0 EF			bne dd1		; of our playfield
+  1113
+  1114 					; Draw ground
+  1115
+  1116 B5AB A2 0F			ldx #15		; Draw ground
+  1117 B5AD A9 C3			lda #195	; Start with dark green
+  1118 B5AF			dc1
+  1119 B5AF 8D 0A D4			sta wsync
+  1120 B5B2 8D 1A D0			sta colbaks
+  1121 B5B5 A0 13			ldy #19
+  1122 B5B7			dc2
+  1123 B5B7 88				dey			; Height of each color cycle
+  1124 B5B8 D0 FD			bne dc2
+  1125 B5BA 18				clc
+  1126 B5BB 69 01			adc #1
+  1127 B5BD CA				dex
+  1128 B5BE D0 EF			bne dc1
+  1129 					
+  1130 B5C0 A9 00			lda #0		; Lower border= black!
+  1131 B5C2 8D 1A D0			sta colbaks
+  1132 B5C5			dlout
+  1133 B5C5 68				pla			; Get registers back
+  1134 B5C6 A8				tay
+  1135 B5C7 68				pla
+  1136 B5C8 AA				tax
+  1137 B5C9 68				pla
+  1138 					
+  1139 B5CA 40				rti
+  1140 				;
+  1141 				; Show score
+  1142 				; 
+  1143 				; Call: 
+  1144 				; delta= Amount of points to be added to current score
+  1145 				;
+  1146
+  1147 B5CB			points
+  1148 B5CB 10 10 10 10 10 10		.byte "000000"
+  1149 B5D1			delta
+  1150 B5D1 00				.byte 0	
+  1151 B5D2			xr5
+  1152 B5D2 00				.byte 0
+  1153 B5D3			yr5
+  1154 B5D3 00				.byte 0
+  1155 					
+  1156 B5D4			score	
+  1157 B5D4 8E D2 B5			stx xr5
+  1158 B5D7 8C D3 B5			sty yr5
+  1159
+  1160 B5DA 20 E9 B5			jsr sl0
+  1161 B5DD CE D1 B5			dec delta
+  1162 B5E0 D0 F2			bne score
+  1163 					
+  1164 B5E2 AE D2 B5			ldx xr5
+  1165 B5E5 AC D3 B5			ldy yr5
+  1166 					
+  1167 B5E8 60				rts
+  1168
+  1169 B5E9			sl0
+  1170 B5E9 A2 05			ldx #5
+  1171
+  1172 B5EB			sl1
+  1173 B5EB BD CB B5			lda points,x	; Get figure
+  1174 B5EE C9 19			cmp #"9"       	; Is it "9"?
+  1175 B5F0 D0 09			bne sl2			; no, increase it
+  1176
+  1177 B5F2 A9 10			lda #"0"     	; Yes! set to zero
+  1178 B5F4 9D CB B5			sta points,X	; and get
+  1179 B5F7 CA				dex				; next
+  1180 B5F8 D0 F1			bne sl1			; figure....
+  1181
+  1182 B5FA 60				rts
+  1183
+  1184 B5FB			sl2
+  1185 B5FB 18				clc
+  1186 B5FC 69 01			adc #1
+  1187 B5FE 9D CB B5			sta points,X
+  1188 					
+  1189 B601 60				rts
+  1190 					
+  1191 				;
+  1192 				; Show score
+  1193 				;
+  1194
+  1195 B602			showscor
+  1196 B602 8E D2 B5			stx xr5			; Save registers
+  1197 B605 8C D3 B5			sty yr5
+  1198 B608 A0 07			ldy #7			; Number of digits
+  1199 B60A A2 00			ldx #0
+  1200 B60C			ss
+  1201 B60C BD CB B5			lda points,x	; Output- loop
+  1202 B60F 99 49 80			sta scorelin,y
+  1203 B612 E8				inx
+  1204 B613 C8				iny
+  1205 B614 E0 07			cpx #7
+  1206 B616 D0 F4			bne ss
+  1207 					
+  1208 B618 AE D2 B5			ldx xr5
+  1209 B61B AC D3 B5			ldy yr5
+  1210 					
+  1211 B61E 60				rts
+  1212
+  1213 				;
+  1214 				; CLSCORE
+  1215 				; Clear score
+  1216 				;
+  1217
+  1218 B61F			clscor
+  1219 B61F A2 00			ldx #0
+  1220 B621			cl	
+  1221 B621 A9 10			lda #16			;=0
+  1222 B623 9D CB B5			sta points,X
+  1223 B626 E8				inx
+  1224 B627 E0 06			cpx #6
+  1225 B629 D0 F6			bne cl
+  1226 B62B 60				rts
+  1227 					
+  1228 				;
+  1229 				; Little Dirty Debugger
+  1230 				; Obsolete, game runs perfectly now :-)
+  1231 				; Use this to show any parameter you want't 
+  1232 				; It works fine as long it's not bigger than 16......
+  1233 				;
+  1234
+  1235 B62C			fig
+  1236 B62C 10 11 12 13 14 15 + 	.byte "0123456789ABVDEF"
+  1237 					
+  1238 B63C			debug
+  1239 B63C AE CE AF			ldx level
+  1240 B63F BD 2C B6			lda fig,x
+  1241 B642 8D 49 80			sta scorelin
+  1242 B645 60				rts
+  1243 					
+  1244 				;
+  1245 				; Wait
+  1246 				; Sometimes our code is to fast........
+  1247 				;
+  1248
+  1249 B646			wtt
+  1250 B646 48				pha				; Save registers
+  1251 B647 8A				txa
+  1252 B648 48				pha
+  1253 B649 98				tya
+  1254 B64A 48				pha
+  1255
+  1256 B64B A2 1E			ldx #30
+  1257 B64D			ww0	
+  1258 B64D A0 C3			ldy #195
+  1259 B64F			ww1	
+  1260 B64F 88				dey
+  1261 B650 D0 FD			bne ww1
+  1262 B652 CA				dex
+  1263 B653 D0 F8			bne ww0
+  1264 					
+  1265 B655 68				pla				; Get registers back
+  1266 B656 A8				tay
+  1267 B657 68				pla
+  1268 B658 AA				tax
+  1269 B659 68				pla
+  1270 					
+  1271 B65A 60				rts
+  1272 					
+  1273 				;
+  1274 				; Antic program and contents of screen RAM for
+  1275 				; our titel screen
+  1276 				;
+  1277
+  1278 				; Some useful equates ;-)
+  1279
+  1280 = 0002			gr0		equ $02					; Gr. 0
+  1281 = 0006			gr1		equ $06					; Gr. 1
+  1282 = 0007			gr2		equ $07
+  1283 = 0014			gr12	equ $14					; Gr. 12, horiz. scrolling enabeled
+  1284
+  1285 B65B			dltitel							;Titel Screen
+  1286 B65B 70 70 70			.byte $70,$70,$70
+  1287 B65E 47 79 B6			.byte $40+gr2,a(titel)
+  1288 B661 06 06 06		:3	.byte gr1
+  1289 B664 70 70 70 70 70	:5	.byte 112
+  1290 					
+  1291 B669 02 02 02 02 02 02 + :13	.byte gr0
+  1292
+  1293 B676 41 5B B6			.byte $41,a(dltitel)
+  1294 B679			titel
+  1295 B679 00 00 22 2F 32 25 + 	.byte "  BORED OF FLOPPY   "
+  1296 B68D 00 00 00 00 00 00 + 	.byte "                    "
+  1297 B6A1 00 00 00 70 72 65 + 	.byte "   press <start>    "
+  1298 B6B5 00 00 00 00 00 00 + 	.byte "                    "
+  1299 					
+  1300 B6C9 00 00 00 00 00 00 + 	.byte "           RetroZock 2014               "
+  1301 B6F1 00 00 00 00 00 00 + 	.byte "          www.retrozock.com             "
+  1302 B719 00 00 00 33 6F 75 + 	.byte "   Source code available at:GitHub      "
+  1303 B741 00 00 00 00 00 00 + 	.byte "                                        "
+  1304 B769 00 00 00 00 00 00 + 	.byte "                                        "
+  1305 B791 00 00 00 00 00 00 + 	.byte "                                        "
+  1306 B7B9 00 00 00 00 00 00 + 	.byte "                                        "
+  1307 B7E1 00 00 00 00 00 00 + 	.byte "                                        "
+  1308 B809 00 00 00 00 00 00 + 	.byte "                                        "
+  1309 B831 00 00 00 00 00 00 + 	.byte "                                        "
+  1310 B859 00 00 00 00 00 00 + 	.byte "                                        "
+  1311 B881 00 00 00 00 00 00 + 	.byte "                                        "
+  1312 B8A9 00 00 00 00 00 00 + 	.byte "                   V 1.0.4B// 22.9.2014 "	
+  1313 				;	
+  1314 				; Antic program for our playfield
+  1315 				;  
+  1316
+  1317 = 00F6			bytes	equ 246							; Our playfield is 246 bytes wide
+  1318
+  1319 B8D1				org 32768							; Should always start at a 4k boundary
+  1320 8000			dlgame						 	
+  1321 8000-8084> 70 F0			.byte 112,112+128					; Start of Antic programm for our playfield			
+  1322 8002 46 49 80			.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
+  1323 8005 70				.byte 112							; and other important messages.....
+  1324 8006			msg
+  1325 8006 46 5D 80			.byte $40+gr1,a(message)			; Message line, tell the player what's going on
+  1326
+  1327 8009 F0				.byte $70+128						; 8 empty lines, start display- list interrupt
+  1328 					
+  1329 800A 54 8C 4B		z0	.byte $40+gr12,a(screen)			; Playfield row 0
+  1330 800D 54 82 4C		z1	.byte $40+gr12,a(screen+1*bytes) 	
+  1331 8010 54 78 4D		z2	.byte $40+gr12,a(screen+2*bytes) 
+  1332 8013 54 6E 4E		z3	.byte $40+gr12,a(screen+3*bytes) 
+  1333 8016 54 64 4F		z4	.byte $40+gr12,a(screen+4*bytes)
+  1334 8019 54 5A 50		z5	.byte $40+gr12,a(screen+5*bytes)
+  1335 801C 54 50 51		z6	.byte $40+gr12,a(screen+6*bytes)
+  1336 801F 54 46 52		z7	.byte $40+gr12,a(screen+7*bytes)
+  1337 8022 54 3C 53		z8	.byte $40+gr12,a(screen+8*bytes)
+  1338 8025 54 32 54		z9	.byte $40+gr12,a(screen+9*bytes)
+  1339 8028 54 28 55		z10	.byte $40+gr12,a(screen+10*bytes)
+  1340 802B 54 1E 56		z11	.byte $40+gr12,a(screen+11*bytes)
+  1341 802E 54 14 57		z12	.byte $40+gr12,a(screen+12*bytes)
+  1342 8031 54 0A 58		z13	.byte $40+gr12,a(screen+13*bytes)
+  1343 8034 54 00 59		z14	.byte $40+gr12,a(screen+14*bytes)
+  1344 8037 54 F6 59		z15	.byte $40+gr12,a(screen+15*bytes)
+  1345 803A 54 EC 5A		z16	.byte $40+gr12,a(screen+16*bytes) 
+  1346 803D 54 E2 5B		z17	.byte $40+gr12,a(screen+17*bytes)
+  1347 8040 54 D8 5C		z18	.byte $40+gr12,a(screen+18*bytes)
+  1348 8043 54 CE 5D		z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
+  1349 8046 41 00 80			.byte $41,a(dlgame)				 	; End of display- list, start all over again....
+  1350 					
+  1351 8049			scorelin								; Contents of screen ram for status display
+  1352 8049 00 73 63 6F 72 65 + 	.byte " score              "
+  1353 805D			message
+  1354 805D 00 26 2C 39 00 2C + 	.byte " FLY LITTLE BIRD..  "
+  1355 8071			m1
+  1356 8071 00 00 00 00 27 21 + 	.byte "    GAME OVER       "
+  1357 					
+  1358 				;
+  1359 				; Charset data
+  1360 				;
+  1361 				; For: Text (Atari Basic-) text modes 0,1,2 
+  1362 				;
+  1363
+  1364 8085				 org $4400
+  1365 4400			chset
+  1366 4400-4B8B> 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$00,$00
+  1367 4408 02 02 02 02 02 02 + 	.byte $02,$02,$02,$02,$02,$02,$02,$02
+  1368 4410 40 40 40 40 40 40 + 	.byte $40,$40,$40,$40,$40,$40,$40,$40,$00,$66,$FF,$FF,$66,$FF,$66,$00
+  1369 4420 18 7E 7E 60 7E 06 + 	.byte $18,$7E,$7E,$60,$7E,$06,$7E,$18,$00,$66,$6C,$18,$30,$66,$46,$00
+  1370 4430 3E 36 1E 78 6F 7E + 	.byte $3E,$36,$1E,$78,$6F,$7E,$7B,$00,$00,$18,$18,$18,$00,$00,$00,$00
+  1371 4440 00 3E 3E 38 38 38 + 	.byte $00,$3E,$3E,$38,$38,$38,$3E,$00,$00,$7C,$7C,$1C,$1C,$1C,$7C,$00
+  1372 4450 00 66 3C FF 3C 66 + 	.byte $00,$66,$3C,$FF,$3C,$66,$00,$00,$00,$18,$18,$7E,$7E,$18,$18,$00
+  1373 4460 00 00 00 00 00 18 + 	.byte $00,$00,$00,$00,$00,$18,$18,$38,$00,$00,$00,$7E,$7E,$00,$00,$00
+  1374 4470 00 00 00 00 00 38 + 	.byte $00,$00,$00,$00,$00,$38,$38,$00,$00,$06,$0E,$1C,$38,$70,$60,$00
+  1375 4480 00 7E 7E 66 66 66 + 	.byte $00,$7E,$7E,$66,$66,$66,$7E,$00,$00,$38,$38,$18,$18,$7E,$7E,$00
+  1376 4490 00 7E 76 0C 38 70 + 	.byte $00,$7E,$76,$0C,$38,$70,$7E,$00,$00,$7E,$7E,$0C,$1C,$66,$3C,$00
+  1377 44A0 00 1C 3C 7C 6E 7E + 	.byte $00,$1C,$3C,$7C,$6E,$7E,$0C,$00,$00,$7E,$7E,$60,$7E,$0E,$7C,$00
+  1378 44B0 00 7E 7E 60 7E 66 + 	.byte $00,$7E,$7E,$60,$7E,$66,$7E,$00,$00,$7E,$7E,$0C,$18,$30,$30,$00
+  1379 44C0 00 7E 7E 66 3C 66 + 	.byte $00,$7E,$7E,$66,$3C,$66,$7E,$00,$00,$7E,$7E,$66,$7E,$06,$7E,$00
+  1380 44D0 00 00 38 38 00 38 + 	.byte $00,$00,$38,$38,$00,$38,$38,$00,$00,$00,$18,$18,$00,$18,$38,$38
+  1381 44E0 06 0C 18 30 18 0C + 	.byte $06,$0C,$18,$30,$18,$0C,$06,$00,$00,$00,$7E,$00,$00,$7E,$00,$00
+  1382 44F0 60 30 18 0C 18 30 + 	.byte $60,$30,$18,$0C,$18,$30,$60,$00,$00,$7E,$7E,$06,$1E,$00,$1C,$1C
+  1383 4500 00 7E 7A 6E 6E 60 + 	.byte $00,$7E,$7A,$6E,$6E,$60,$7E,$00,$00,$7E,$7E,$66,$66,$7E,$66,$00
+  1384 4510 00 7E 7E 66 7C 66 + 	.byte $00,$7E,$7E,$66,$7C,$66,$7E,$00,$00,$7E,$7E,$66,$60,$66,$7E,$00
+  1385 4520 00 7C 7E 66 66 6C + 	.byte $00,$7C,$7E,$66,$66,$6C,$78,$00,$00,$7E,$7E,$60,$7E,$60,$7E,$00
+  1386 4530 00 7E 7E 60 78 60 + 	.byte $00,$7E,$7E,$60,$78,$60,$60,$00,$00,$7E,$7E,$60,$6E,$66,$7E,$00
+  1387 4540 00 66 66 66 7E 7E + 	.byte $00,$66,$66,$66,$7E,$7E,$66,$00,$00,$7E,$7E,$18,$18,$18,$7E,$00
+  1388 4550 00 1E 1E 06 66 66 + 	.byte $00,$1E,$1E,$06,$66,$66,$7E,$00,$00,$66,$66,$6C,$78,$7C,$66,$00
+  1389 4560 00 60 60 60 66 7E + 	.byte $00,$60,$60,$60,$66,$7E,$7E,$00,$00,$63,$77,$77,$7F,$6B,$63,$00
+  1390 4570 00 76 76 7E 6E 66 + 	.byte $00,$76,$76,$7E,$6E,$66,$66,$00,$00,$7E,$7E,$66,$66,$66,$7E,$00
+  1391 4580 00 7E 7E 66 66 7E + 	.byte $00,$7E,$7E,$66,$66,$7E,$60,$00,$00,$7E,$7E,$66,$66,$6C,$76,$00
+  1392 4590 00 7E 7E 66 64 7C + 	.byte $00,$7E,$7E,$66,$64,$7C,$66,$00,$00,$7E,$7E,$60,$7E,$06,$7E,$00
+  1393 45A0 00 7E 7E 18 18 18 + 	.byte $00,$7E,$7E,$18,$18,$18,$18,$00,$00,$66,$66,$66,$66,$7E,$7E,$00
+  1394 45B0 00 66 66 66 66 3C + 	.byte $00,$66,$66,$66,$66,$3C,$3C,$00,$00,$63,$63,$6B,$7F,$7F,$77,$00
+  1395 45C0 00 66 66 3C 3C 7E + 	.byte $00,$66,$66,$3C,$3C,$7E,$66,$00,$00,$66,$66,$7E,$7E,$18,$18,$00
+  1396 45D0 00 7E 7E 0C 38 60 + 	.byte $00,$7E,$7E,$0C,$38,$60,$7E,$00,$00,$1E,$1E,$18,$18,$18,$1E,$00
+  1397 45E0 00 40 60 30 18 0C + 	.byte $00,$40,$60,$30,$18,$0C,$06,$00,$00,$78,$78,$18,$18,$18,$78,$00
+  1398 45F0 00 08 1C 3E 63 00 + 	.byte $00,$08,$1C,$3E,$63,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$00
+  1399 4600 00 36 7F 7F 3E 1C + 	.byte $00,$36,$7F,$7F,$3E,$1C,$08,$00,$18,$18,$18,$1F,$1F,$18,$18,$18
+  1400 4610 03 03 03 03 03 03 + 	.byte $03,$03,$03,$03,$03,$03,$03,$03,$18,$18,$18,$F8,$F8,$00,$00,$00
+  1401 4620 18 18 18 F8 F8 18 + 	.byte $18,$18,$18,$F8,$F8,$18,$18,$18,$00,$00,$00,$F8,$F8,$18,$18,$18
+  1402 4630 03 07 0E 1C 38 70 + 	.byte $03,$07,$0E,$1C,$38,$70,$E0,$C0,$C0,$E0,$70,$38,$1C,$0E,$07,$03
+  1403 4640 01 03 07 0F 1F 3F + 	.byte $01,$03,$07,$0F,$1F,$3F,$7F,$FF,$00,$00,$00,$00,$0F,$0F,$0F,$0F
+  1404 4650 80 C0 E0 F0 F8 FC + 	.byte $80,$C0,$E0,$F0,$F8,$FC,$FE,$FF,$0F,$0F,$0F,$0F,$00,$00,$00,$00
+  1405 4660 F0 F0 F0 F0 00 00 + 	.byte $F0,$F0,$F0,$F0,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$00,$00
+  1406 4670 00 00 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$F0,$F0,$F0,$F0
+  1407 4680 00 1C 1C 7F 77 1C + 	.byte $00,$1C,$1C,$7F,$77,$1C,$3E,$00,$00,$00,$00,$1F,$1F,$18,$18,$18
+  1408 4690 00 00 00 FF FF 00 + 	.byte $00,$00,$00,$FF,$FF,$00,$00,$00,$18,$18,$18,$FF,$FF,$18,$18,$18
+  1409 46A0 00 00 3C 7E 7E 7E + 	.byte $00,$00,$3C,$7E,$7E,$7E,$3C,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF
+  1410 46B0 C0 C0 C0 C0 C0 C0 + 	.byte $C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00,$00,$00,$FF,$FF,$18,$18,$18
+  1411 46C0 18 18 18 FF FF 00 + 	.byte $18,$18,$18,$FF,$FF,$00,$00,$00,$F0,$F0,$F0,$F0,$F0,$F0,$F0,$F0
+  1412 46D0 18 18 18 1F 1F 00 + 	.byte $18,$18,$18,$1F,$1F,$00,$00,$00,$7C,$7C,$60,$78,$60,$7E,$18,$1E
+  1413 46E0 00 18 3C 7E 18 18 + 	.byte $00,$18,$3C,$7E,$18,$18,$18,$00,$00,$18,$18,$18,$7E,$3C,$18,$00
+  1414 46F0 00 18 30 7E 30 18 + 	.byte $00,$18,$30,$7E,$30,$18,$00,$00,$00,$18,$0C,$7E,$0C,$18,$00,$00
+  1415 4700 00 18 3C 7E 7E 3C + 	.byte $00,$18,$3C,$7E,$7E,$3C,$18,$00,$00,$00,$7E,$06,$7E,$66,$7E,$00
+  1416 4710 00 60 60 7E 7E 66 + 	.byte $00,$60,$60,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$7E,$60,$60,$7E,$00
+  1417 4720 00 06 06 7E 7E 66 + 	.byte $00,$06,$06,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$66,$7E,$60,$7E,$00
+  1418 4730 00 1E 1E 18 7E 18 + 	.byte $00,$1E,$1E,$18,$7E,$18,$18,$00,$00,$00,$7E,$7E,$66,$7E,$06,$7E
+  1419 4740 00 60 60 7E 7E 66 + 	.byte $00,$60,$60,$7E,$7E,$66,$66,$00,$38,$38,$00,$38,$38,$18,$3C,$00
+  1420 4750 00 06 00 06 06 06 + 	.byte $00,$06,$00,$06,$06,$06,$3E,$3E,$00,$60,$60,$66,$7C,$7C,$66,$00
+  1421 4760 00 38 38 18 18 3C + 	.byte $00,$38,$38,$18,$18,$3C,$3C,$00,$00,$00,$77,$77,$7F,$7F,$6B,$00
+  1422 4770 00 00 7E 7E 66 66 + 	.byte $00,$00,$7E,$7E,$66,$66,$66,$00,$00,$00,$7E,$7E,$66,$66,$7E,$00
+  1423 4780 00 00 7E 7E 66 7E + 	.byte $00,$00,$7E,$7E,$66,$7E,$60,$60,$00,$00,$7E,$7E,$66,$7E,$06,$06
+  1424 4790 00 00 7E 7E 60 60 + 	.byte $00,$00,$7E,$7E,$60,$60,$60,$00,$00,$00,$7E,$60,$7E,$06,$7E,$00
+  1425 47A0 00 18 7E 7E 18 18 + 	.byte $00,$18,$7E,$7E,$18,$18,$1E,$00,$00,$00,$66,$66,$66,$7E,$7E,$00
+  1426 47B0 00 00 66 66 7E 3C + 	.byte $00,$00,$66,$66,$7E,$3C,$18,$00,$00,$00,$63,$6B,$7F,$7F,$77,$00
+  1427 47C0 00 00 66 7E 3C 7E + 	.byte $00,$00,$66,$7E,$3C,$7E,$66,$00,$00,$00,$66,$66,$7E,$7E,$0E,$7E
+  1428 47D0 00 00 7E 7E 18 30 + 	.byte $00,$00,$7E,$7E,$18,$30,$7E,$00,$00,$18,$3C,$7E,$7E,$18,$3C,$00
+  1429 47E0 18 18 18 18 18 18 + 	.byte $18,$18,$18,$18,$18,$18,$18,$18,$00,$7E,$78,$7C,$6E,$67,$03,$00
+  1430 47F0 FF FF FF FF FF FF + 	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$54,$54,$54,$54,$54,$54,$00
+  1431 					
+  1432 				;
+  1433 				; Charset data
+  1434 				;
+  1435 				; For: Text (Atari Basic-) text modes 12 and 13 
+  1436 				;
+  1437 				; They are not ordered :(
+  1438 				;
+  1439
+  1440 4800					org 18432														
+  1441 						
+  1442 4800			chset12
+  1443 4800 00 00 00 00 00 00 + :8		.byte 0																; Empty						//0
+  1444 4808 7F 7F 7F 1F 1F 07 +  		.byte 127,127,127,31,31,7,7,1										; Cloud tile 1, bottom left //1
+  1445 4810 FF 7D 14 00 00 00 + 		.byte 255,125,20,0,0,0,0,0											; Cloud tile bottom			//2
+  1446 4818 00 00 14 7D FF FF + 		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cloud tile top			//3
+  1447 4820 FD FD F4 F4 D0 D0 + 		.byte 253	,	253	,	244	,	244	,	208	,	208	,	64	,	64  ; Cloud tile, bottom right	//4
+  1448 4828 FF FF FF FF FF FF + :8		.byte 255															; Cloud tile, solid block	//5
+  1449
+  1450 4830 55 55 55 55 55 55 + :8		.byte 85															; Solid black block			//6		
+  1451 4838 55 55 55 55 55 65 + 		.byte 85	,	85	,	85	,	85	,	85	,	101	,	166	,	170 ; Solid black block, bottom //7
+  1452
+  1453 4840 BB BB BB BB BB BB + :8		.byte 187													        ; Light green block 		//8
+  1454 4848 BA BA BA BA BA BA + 		.byte 186	,	186	,	186	,	186	,	186	,	186	,	186	,	186	; Not so light green block  //9
+  1455 4850 AE AE AE AE AE AE + :8		.byte 174															; Solid green block			//10
+  1456 4858 AB AB AB AB AB AB + :8		.byte 171															; Solid green block			//11
+  1457 4860 40 40 40 40 40 40 + :8		.byte 64															; Flag pole 				//12
+  1458 4868 4C 7F 7F 7F 7F 7F + 	    .byte 76	,	127	,	127	,	127	,	127	,	127	,	127	,	76  ; Flag part 	1			//13
+  1459 4870 CF FF FC FC FC FC + 		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14
+  1460 4878 55 55 41 41 41 55 + 		.byte 85	,	85	,	65	,	65	,	65	,	85	,	85	,	85  ; Building part with window //15
+  1461 					
+  1462 				;
+  1463 				; A poem
+  1464 				;
+  1465
+  1466 4880			poem
+  1467 4880 00 00 6F 68 00 68 + 	.byte "  oh have i surely.."
+  1468 4894 00 00 73 6C 69 70 + 	.byte "  slipped the bonds."
+  1469 48A8 00 00 6F 66 00 65 + 	.byte "  of earth and...   "
+  1470 48BC 00 00 64 61 6E 63 + 	.byte "  danced the skies.."
+  1471 48D0 00 00 6F 6E 00 6C + 	.byte "  on laughter       "
+  1472 48E4 00 00 73 69 6C 76 + 	.byte "  silvered wings    "
+  1473 48F8 00 00 73 75 6E 77 + 	.byte "  sunward i climbed "
+  1474 490C 00 00 61 6E 64 00 + 	.byte "  and joined the    "	
+  1475 4920 00 00 74 75 6D 62 + 	.byte "  tumbeling mirth of"
+  1476 4934 00 00 73 75 6E 00 + 	.byte "  sun splid clouds  "
+  1477 4948 00 00 61 6E 64 00 + 	.byte "  and done hundred  "
+  1478 495C 00 00 74 68 69 6E + 	.byte "  things you have   "
+  1479 4970 00 00 6E 6F 74 00 + 	.byte "  not dreamed of -- "
+  1480 4984 00 00 77 68 65 65 + 	.byte "  wheeled and soared"
+  1481 4998 00 00 61 6E 64 00 + 	.byte "  and swung high in "
+  1482 49AC 00 00 74 68 65 00 + 	.byte "  the sunlit silence"
+  1483 49C0 00 00 68 6F 76 07 + 	.byte "  hov'ring there    "
+  1484 49D4 00 00 69 00 63 68 + 	.byte "  i chased the      "
+  1485 49E8 00 00 73 6F 75 74 + 	.byte "  souting wind      "
+  1486 49FC 00 00 61 6C 6F 6E + 	.byte "  along and flung   "
+  1487 4A10 00 00 6D 79 00 65 + 	.byte "  my eager craft    "
+  1488 4A24 00 00 74 68 72 6F + 	.byte "  throgh footless   "
+  1489 4A38 00 00 68 61 6C 6C + 	.byte "  halls of air.     "
+  1490 4A4C 00 00 75 70 00 75 + 	.byte "  up up the long    "
+  1491 4A60 00 00 64 65 6C 69 + 	.byte "  delirious burning "
+  1492 4A74 00 00 62 6C 75 65 + 	.byte "  blue........      "
+  1493 4A88 00 00 69 07 76 65 + 	.byte "  i've topped the   "
+  1494 4A9C 00 00 77 69 6E 64 + 	.byte "  windswept heights "
+  1495 4AB0 00 00 77 69 74 68 + 	.byte "  with easy grace   "
+  1496 4AC4 00 00 77 68 65 72 + 	.byte "  where never lark  "
+  1497 4AD8 00 00 6F 72 00 65 + 	.byte "  or even eagle flew"
+  1498 4AEC 00 00 61 6E 64 00 + 	.byte "  and while, with   "
+  1499 4B00 00 77 69 74 68 00 + 	.byte " with silent lifting"
+  1500 4B14 00 00 6D 69 6E 64 + 	.byte "  mind i've trod the"
+  1501 4B28 00 68 65 69 67 68 + 	.byte " heigh untresspassed"
+  1502 4B3C 00 00 63 61 6E 63 + 	.byte "  canctity of space "
+  1503 4B50 00 00 70 75 74 00 + 	.byte "  put out my hand   "
+  1504 4B64 00 00 61 6E 64 00 + 	.byte "  and touced the    "
+  1505 4B78 00 00 64 8B 66 61 + 	.byte "  d«face of god.    "    		
+  1506 											
+  1507 				;
+  1508 				; Screen- ram of playfield
+  1509 				;
+  1510
+  1511 4B8C			screen
+  1512 4B8C				org $7530
+  1513 					
+  1514 7530			screen2
+  1515 7530				org $9c40
+  1516
+  1517
+  1518
+  1519
+  1520
+  1521
+  1522
+  1523 					
+  1524 					
+  1525
