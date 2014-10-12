@@ -6,7 +6,7 @@ mads 1.9.3
      5 				;
      6 				; BF 
      7 				;
-     8 				; V1.0.3B // 20.09.2014 
+     8 				; V1.0.4B // 20.09.2014 
      9 				; 
     10 				; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
     11 				;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -1310,13 +1310,13 @@ mads 1.9.3
   1309 B831 00 00 00 00 00 00 + 	.byte "                                        "
   1310 B859 00 00 00 00 00 00 + 	.byte "                                        "
   1311 B881 00 00 00 00 00 00 + 	.byte "                                        "
-  1312 B8A9 00 00 00 00 00 00 + 	.byte "                   V 1.0.4B// 22.9.2014 "	
+  1312 B8A9 00 00 00 00 00 00 + 	.byte "                   V 1.0.4B// 20.9.2014 "	
   1313 				;	
   1314 				; Antic program for our playfield
   1315 				;  
   1316
   1317 = 00F6			bytes	equ 246							; Our playfield is 246 bytes wide
-  1318
+  1318 					
   1319 B8D1				org 32768							; Should always start at a 4k boundary
   1320 8000			dlgame						 	
   1321 8000-8084> 70 F0			.byte 112,112+128					; Start of Antic programm for our playfield			

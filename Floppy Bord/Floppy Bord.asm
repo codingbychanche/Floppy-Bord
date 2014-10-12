@@ -5,7 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.3B // 20.09.2014 
+; V1.0.4B // 20.09.2014 
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -1309,13 +1309,13 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.4B// 22.9.2014 "	
+	.byte "                   V 1.0.4B// 20.9.2014 "	
 ;	
 ; Antic program for our playfield
 ;  
 
 bytes	equ 246							; Our playfield is 246 bytes wide
-
+	
 	org 32768							; Should always start at a 4k boundary
 dlgame						 	
 	.byte 112,112+128					; Start of Antic programm for our playfield			
