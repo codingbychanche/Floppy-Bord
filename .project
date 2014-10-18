@@ -10,6 +10,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>BlockOut</name>
+			<type>2</type>
+			<location>/Users/Berthold/Documents/6502 Programming/BlockOut</location>
+		</link>
+		<link>
 			<name>Sound</name>
 			<type>2</type>
 			<location>/Users/Berthold/Documents/6502 Programming/Sound</location>

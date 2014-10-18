@@ -5,7 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.4B // 20.09.2014 
+; V1.0.4B // 18.10.2014 
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -98,7 +98,7 @@ CONSOL	EQU 53279
 ; Start
 ;
 
-	org $afc8
+	org 45000
 	
 	jmp titelscr
 kill
@@ -363,7 +363,7 @@ hard
 	sta $d404		; after chracter was moved to it's leftmost position 
 	sta clocks		
 	
-	lda #20 		; We scroll 20 rows of our playfield
+	lda #maxlin 	; We scroll 20 rows of our playfield
 	sta lines
 	
 	lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
@@ -626,20 +626,20 @@ cl1
 	; Height of window in pilar, first value is for level 1, second value for....
 
 wheight
-	.byte	10,10,10,10,10
-	.byte	7,6,5,7,7,7,7,7,7,7,7,7
-	.byte   5,5,5,5,5,5,4,5,5,5,6,6
+	.byte	8,8,7,7,6,6,5,5,5,4,4,4
+	.byte	5,5,5,5,4,4,4,4,4,4,4,4
+	.byte   4,4,4,3,3,3,3,3,3,3,3,3
 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
 	.byte   4,4,4,4,4,4,4,4,4,4,4,4
 	
 	; ......space between pillars. Same as above
 
 dist
-	.byte 	8,8,8,8,8,8,8,8,8,8,8,8,8
-	.byte	8,8,8,8,8,8,8,8,8,8,8,8
-	.byte 	8,8,8,8,8,8,8,8,8,8,8,8
-	.byte   8,8,8,8,8,8,8,8,8,8,8,8
-	.byte   10,10,10,10,10,10,10,10,10
+	.byte 	5,5,8,8,9,5,5,5,5,5,5,5,5
+	.byte	8,8,8,8,8,8,8,8,8,8,8,8,8
+	.byte 	9,9,9,9,9,9,9,9,9,9,9,9,9
+	.byte   8,8,8,8,8,8,8,8,8,8,8,8,9
+	.byte   6,6,6,6,6,6,6,6,6,6,6,6,6
 	
 space	
 	.byte 8					; Space between pillars
@@ -699,7 +699,7 @@ screeninit
 	sty yy
 
 
-	ldx #20			; 20 rows
+	ldx #maxlin		; Max of rows/ screen
 	ldy #0
 
 lll0
@@ -751,7 +751,7 @@ cll2
 	cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
 	bne cll2		; Next x- pos
 	iny				; Next row
-	cpy #20			; Until all 20 rows are done
+	cpy #maxlin		; Until all rows are done
 	bne cll1	
 	
 	;
@@ -781,7 +781,7 @@ lli1
 	bne lli1
 	
 	ldx #60		; Draw bottom of screen.....
-	ldy #18		; mother earth :-)
+	ldy #17		; mother earth :-)
 	lda #7
 lli2
 	jsr plot
@@ -808,7 +808,7 @@ ppp2
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #maxlin
 	bne ppp2	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -842,7 +842,7 @@ ppp22
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #maxlin
 	bne ppp22	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -908,7 +908,7 @@ pp2
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #maxlin
 	bne pp2	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -982,12 +982,12 @@ yr4		.byte 0
 aa4		.byte 0
 
 adtab2
-	.byte a(screen)			; Row 1
-	.byte a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
-	.byte a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
-	.byte a(screen+3*bytes)	; the structure of our antic program.
-	.byte a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
-	.byte a(screen+5*bytes)	; instruction
+	.byte a(screen)			
+	.byte a(screen+1*bytes)	
+	.byte a(screen+2*bytes)	
+	.byte a(screen+3*bytes)	
+	.byte a(screen+4*bytes)	
+	.byte a(screen+5*bytes)	
 	.byte a(screen+6*bytes)
 	.byte a(screen+7*bytes)
 	.byte a(screen+8*bytes)
@@ -1101,7 +1101,7 @@ dli1
 dd1
 	sta wsync	; Wait until scanline is finished
 	sta colbaks ; Init background color reg.
-	ldy #75		; This determins the height of each color cycle
+	ldy #55		; This determins the height of each color cycle
 dd2
 	dey
 	bne dd2
@@ -1118,9 +1118,9 @@ dd2
 dc1
 	sta wsync
 	sta colbaks
-	ldy #19
+	ldy #19		; Height of each color cycle
 dc2
-	dey			; Height of each color cycle
+	dey			
 	bne dc2
 	clc
 	adc #1
@@ -1316,7 +1316,7 @@ titel
 
 bytes	equ 246							; Our playfield is 246 bytes wide
 	
-	org 32768							; Should always start at a 4k boundary
+		org 24576						; Should always start at a 4k boundary
 dlgame						 	
 	.byte 112,112+128					; Start of Antic programm for our playfield			
 	.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
@@ -1361,7 +1361,7 @@ m1
 ; For: Text (Atari Basic-) text modes 0,1,2 
 ;
 
-	 org $4400
+	 org 17408
 chset
 	.byte $00,$00,$00,$00,$00,$00,$00,$00
 	.byte $02,$02,$02,$02,$02,$02,$02,$02
@@ -1509,10 +1509,10 @@ poem
 ;
 
 screen
-	org $7530
+	org 32768
 	
 screen2
-	org $9c40
+	org 40000
 
 
 
