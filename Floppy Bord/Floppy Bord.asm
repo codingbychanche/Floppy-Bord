@@ -626,18 +626,18 @@ cl1
 	; Height of window in pilar, first value is for level 1, second value for....
 
 wheight
-	.byte	8,8,7,7,6,6,5,5,5,4,4,4
+	.byte	8,7,6,5,5,5,5,5,5,4,4,4
 	.byte	5,5,5,5,4,4,4,4,4,4,4,4
-	.byte   4,4,4,3,3,3,3,3,3,3,3,3
+	.byte   8,8,8,8,8,8,8,8,8,8,8,8
 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
 	.byte   4,4,4,4,4,4,4,4,4,4,4,4
 	
 	; ......space between pillars. Same as above
 
 dist
-	.byte 	5,5,8,8,9,5,5,5,5,5,5,5,5
-	.byte	8,8,8,8,8,8,8,8,8,8,8,8,8
-	.byte 	9,9,9,9,9,9,9,9,9,9,9,9,9
+	.byte 	10,8,7,6,5,,5,5,5,5,5,5,5
+	.byte	5,5,5,4,4,4,4,4,4,4,4,4,4
+	.byte 	3,3,3,3,4,4,4,4,4,5,5,5,5
 	.byte   8,8,8,8,8,8,8,8,8,8,8,8,9
 	.byte   6,6,6,6,6,6,6,6,6,6,6,6,6
 	
@@ -781,7 +781,7 @@ lli1
 	bne lli1
 	
 	ldx #60		; Draw bottom of screen.....
-	ldy #17		; mother earth :-)
+	ldy #18		; mother earth :-)
 	lda #7
 lli2
 	jsr plot
@@ -1080,15 +1080,22 @@ dli1
 	;
 	; Set chset for playfield and playfield colors
 	;
-												
+
 	lda #>chset12 ; Electron beam has crossed row 38 that means
 	sta $d409	; we are in playfild area of our screen
-	lda #10		; Color for bit combination: 01
-	sta colpf0s										
+
 	lda #200	; Color for bit combination: 10
-	sta colpf1s
+	sta colpf1s									
+	sta wsync
+	
 	lda #14		; Color for bit combination: 11
 	sta colpf2s
+	sta wsync
+	
+	lda #10		; Color for bit combination: 01	
+	sta colpf0s									
+	sta wsync
+
 	lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
 	clc			; The only object on screen with that color is our flag that marks
 	adc level	; the begining of the next level. We change that color every new
@@ -1096,12 +1103,12 @@ dli1
 
 	; Draw sky
 
-	ldx #15		; Draw Background
+	ldx #15		; Draw Background 
 	lda #127	; Bright blue
 dd1
 	sta wsync	; Wait until scanline is finished
 	sta colbaks ; Init background color reg.
-	ldy #55		; This determins the height of each color cycle
+	ldy #75		; This determins the height of each color cycle
 dd2
 	dey
 	bne dd2
@@ -1309,7 +1316,7 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.4B// 20.9.2014 "	
+	.byte "                   V 1.0.4B// 17.10.2014"	
 ;	
 ; Antic program for our playfield
 ;  

@@ -101,7 +101,7 @@ mads 1.9.3
    100
    101 					org 45000
    102 					
-   103 FFFF> AFC8-B8DE> 4C CF + 	jmp titelscr
+   103 FFFF> AFC8-B8E6> 4C CF + 	jmp titelscr
    104 AFCB			kill
    105 AFCB 00				.byte 0			; Killflag. 1 means, player (bird) has died.....
    106 AFCC			wait
@@ -123,7 +123,7 @@ mads 1.9.3
    122 AFD7 A9 09			lda #9	
    123 AFD9 8D 1E D0			sta $d01e		; Clear all collision registers
    124
-   125 AFDC A9 69			lda #<dltitel	; Show titel screen
+   125 AFDC A9 71			lda #<dltitel	; Show titel screen
    126 AFDE 8D 30 02			sta dlptr	
    127 AFE1 A9 B6			lda #>dltitel
    128 AFE3 8D 31 02			sta dlptr+1
@@ -155,9 +155,9 @@ mads 1.9.3
    154 B00E A9 00			lda #0			; Background color= black, we do that here, so we
    155 B010 8D C8 02			sta colbak		; don't have to take care later within dli- routine (which would complicate things...)
    156 					
-   157 B013 20 78 B3			jsr screeninit	; Game- screen init (draw playfield, init antic- program)
-   158 B016 20 2D B6			jsr clscor		; Clear old score
-   159 B019 20 10 B6			jsr showscor	; Show score
+   157 B013 20 77 B3			jsr screeninit	; Game- screen init (draw playfield, init antic- program)
+   158 B016 20 35 B6			jsr clscor		; Clear old score
+   159 B019 20 18 B6			jsr showscor	; Show score
    160
    161 B01C A9 00			lda #0			; Bird is alive!
    162 B01E 8D CB AF			sta kill	
@@ -167,7 +167,7 @@ mads 1.9.3
    166 B026 A9 32			lda #50			; Bird will apear at line 50 on the screen
    167 B028 8D 10 B2			sta ypos
    168
-   169 B02B A9 51			lda #<dli   	; Display- List- Interrupt on
+   169 B02B A9 50			lda #<dli   	; Display- List- Interrupt on
    170 B02D 8D 00 02			sta vdlist
    171 B030 A9 B5			lda #>dli
    172 B032 8D 01 02			sta vdlist+1
@@ -228,7 +228,7 @@ mads 1.9.3
    227 					; Init new playfield
    228 					;
    229 					
-   230 B08D 20 78 B3			jsr screeninit
+   230 B08D 20 77 B3			jsr screeninit
    231
    232 B090 A9 00			lda #0			; Message=> scroll playfield from start
    233 B092 8D CD AF			sta seqend	
@@ -243,10 +243,10 @@ mads 1.9.3
    242 B0A4 A2 64			ldx #100
    243 B0A6			incsc
    244 B0A6 A9 01			lda #1			; Increase score!	
-   245 B0A8 8D DF B5			sta delta		; Show Score
-   246 B0AB 20 E2 B5			jsr score
-   247 B0AE 20 10 B6			jsr showscor	
-   248 B0B1 20 54 B6			jsr wtt			; Wait!	
+   245 B0A8 8D E7 B5			sta delta		; Show Score
+   246 B0AB 20 EA B5			jsr score
+   247 B0AE 20 18 B6			jsr showscor	
+   248 B0B1 20 5C B6			jsr wtt			; Wait!	
    249 B0B4 CA				dex				; Still alive!				
    250 B0B5 D0 EF			bne incsc		; Increase score!
    251
@@ -299,7 +299,7 @@ mads 1.9.3
    298 B0F5 8A				txa
    299 B0F6 2D 01 D2			and $d201
    300 B0F9 8D 01 D2			sta $d201
-   301 B0FC 20 54 B6			jsr wtt
+   301 B0FC 20 5C B6			jsr wtt
    302 B0FF CA				dex
    303 B100 D0 F3			bne deathsound
    304 					
@@ -627,104 +627,104 @@ mads 1.9.3
    626 					; Height of window in pilar, first value is for level 1, second value for....
    627
    628 B2B5			wheight
-   629 B2B5 08 08 07 07 06 06 + 	.byte	8,8,7,7,6,6,5,5,5,4,4,4
+   629 B2B5 08 07 06 05 05 05 + 	.byte	8,7,6,5,5,5,5,5,5,4,4,4
    630 B2C1 05 05 05 05 04 04 + 	.byte	5,5,5,5,4,4,4,4,4,4,4,4
-   631 B2CD 04 04 04 03 03 03 + 	.byte   4,4,4,3,3,3,3,3,3,3,3,3
+   631 B2CD 08 08 08 08 08 08 + 	.byte   8,8,8,8,8,8,8,8,8,8,8,8
    632 B2D9 05 05 05 05 05 05 + 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
    633 B2E5 04 04 04 04 04 04 + 	.byte   4,4,4,4,4,4,4,4,4,4,4,4
    634 					
    635 					; ......space between pillars. Same as above
    636
    637 B2F1			dist
-   638 B2F1 05 05 08 08 09 05 + 	.byte 	5,5,8,8,9,5,5,5,5,5,5,5,5
-   639 B2FE 08 08 08 08 08 08 + 	.byte	8,8,8,8,8,8,8,8,8,8,8,8,8
-   640 B30B 09 09 09 09 09 09 + 	.byte 	9,9,9,9,9,9,9,9,9,9,9,9,9
-   641 B318 08 08 08 08 08 08 + 	.byte   8,8,8,8,8,8,8,8,8,8,8,8,9
-   642 B325 06 06 06 06 06 06 + 	.byte   6,6,6,6,6,6,6,6,6,6,6,6,6
+   638 B2F1 0A 08 07 06 05 05 + 	.byte 	10,8,7,6,5,,5,5,5,5,5,5,5
+   639 B2FD 05 05 05 04 04 04 + 	.byte	5,5,5,4,4,4,4,4,4,4,4,4,4
+   640 B30A 03 03 03 03 04 04 + 	.byte 	3,3,3,3,4,4,4,4,4,5,5,5,5
+   641 B317 08 08 08 08 08 08 + 	.byte   8,8,8,8,8,8,8,8,8,8,8,8,9
+   642 B324 06 06 06 06 06 06 + 	.byte   6,6,6,6,6,6,6,6,6,6,6,6,6
    643 					
-   644 B332			space	
-   645 B332 08				.byte 8					; Space between pillars
-   646 B333			window	
-   647 B333 05				.byte 5					; Big, or small window....
+   644 B331			space	
+   645 B331 08				.byte 8					; Space between pillars
+   646 B332			window	
+   647 B332 05				.byte 5					; Big, or small window....
    648
    649 				; Other important var's
    650
-   651 B334			zeile
-   652 B334 00				.byte 0
-   653 B335			yp
-   654 B335 00				.byte 0
-   655 B336			wide 
-   656 B336 00				.byte 0
-   657 B337			length
-   658 B337 00				.byte 0
-   659 B338			col
-   660 B338 00				.byte 0
+   651 B333			zeile
+   652 B333 00				.byte 0
+   653 B334			yp
+   654 B334 00				.byte 0
+   655 B335			wide 
+   656 B335 00				.byte 0
+   657 B336			length
+   658 B336 00				.byte 0
+   659 B337			col
+   660 B337 00				.byte 0
    661 					
-   662 B339			aa
-   663 B339 00				.byte 0
-   664 B33A			xx	
-   665 B33A 00				.byte 0
-   666 B33B			yy	
-   667 B33B 00				.byte 0
+   662 B338			aa
+   663 B338 00				.byte 0
+   664 B339			xx	
+   665 B339 00				.byte 0
+   666 B33A			yy	
+   667 B33A 00				.byte 0
    668
    669 				; Adress table
    670
    671 = 0000			dummy	equ 0						; a, well, a dummy.....
    672 					
-   673 B33C			adtab
-   674 B33C 00 8C 4B			.byte dummy,a(screen)			; Row 1
-   675 B33F 00 82 4C			.byte dummy,a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
-   676 B342 00 78 4D			.byte dummy,a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
-   677 B345 00 6E 4E			.byte dummy,a(screen+3*bytes)	; the structure of our antic program.
-   678 B348 00 64 4F			.byte dummy,a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
-   679 B34B 00 5A 50			.byte dummy,a(screen+5*bytes)	; instruction
-   680 B34E 00 50 51			.byte dummy,a(screen+6*bytes)
-   681 B351 00 46 52			.byte dummy,a(screen+7*bytes)
-   682 B354 00 3C 53			.byte dummy,a(screen+8*bytes)
-   683 B357 00 32 54			.byte dummy,a(screen+9*bytes)
-   684 B35A 00 28 55			.byte dummy,a(screen+10*bytes)
-   685 B35D 00 1E 56			.byte dummy,a(screen+11*bytes)
-   686 B360 00 14 57			.byte dummy,a(screen+12*bytes)
-   687 B363 00 0A 58			.byte dummy,a(screen+13*bytes)
-   688 B366 00 00 59			.byte dummy,a(screen+14*bytes)
-   689 B369 00 F6 59			.byte dummy,a(screen+15*bytes)
-   690 B36C 00 EC 5A			.byte dummy,a(screen+16*bytes)
-   691 B36F 00 E2 5B			.byte dummy,a(screen+17*bytes)
-   692 B372 00 D8 5C			.byte dummy,a(screen+18*bytes)
-   693 B375 00 CE 5D			.byte dummy,a(screen+19*bytes)	; Row 20
+   673 B33B			adtab
+   674 B33B 00 8C 4B			.byte dummy,a(screen)			; Row 1
+   675 B33E 00 82 4C			.byte dummy,a(screen+1*bytes)	; Now we see why there is this suspicous dummy,
+   676 B341 00 78 4D			.byte dummy,a(screen+2*bytes)	; It is there to let 'adtab' look exactly like 
+   677 B344 00 6E 4E			.byte dummy,a(screen+3*bytes)	; the structure of our antic program.
+   678 B347 00 64 4F			.byte dummy,a(screen+4*bytes)	; In our antic programm dummy contains the 'lsm'
+   679 B34A 00 5A 50			.byte dummy,a(screen+5*bytes)	; instruction
+   680 B34D 00 50 51			.byte dummy,a(screen+6*bytes)
+   681 B350 00 46 52			.byte dummy,a(screen+7*bytes)
+   682 B353 00 3C 53			.byte dummy,a(screen+8*bytes)
+   683 B356 00 32 54			.byte dummy,a(screen+9*bytes)
+   684 B359 00 28 55			.byte dummy,a(screen+10*bytes)
+   685 B35C 00 1E 56			.byte dummy,a(screen+11*bytes)
+   686 B35F 00 14 57			.byte dummy,a(screen+12*bytes)
+   687 B362 00 0A 58			.byte dummy,a(screen+13*bytes)
+   688 B365 00 00 59			.byte dummy,a(screen+14*bytes)
+   689 B368 00 F6 59			.byte dummy,a(screen+15*bytes)
+   690 B36B 00 EC 5A			.byte dummy,a(screen+16*bytes)
+   691 B36E 00 E2 5B			.byte dummy,a(screen+17*bytes)
+   692 B371 00 D8 5C			.byte dummy,a(screen+18*bytes)
+   693 B374 00 CE 5D			.byte dummy,a(screen+19*bytes)	; Row 20
    694
-   695 B378			screeninit	
+   695 B377			screeninit	
    696 					
-   697 B378 8D 39 B3			sta aa
-   698 B37B 8E 3A B3			stx xx
-   699 B37E 8C 3B B3			sty yy
+   697 B377 8D 38 B3			sta aa
+   698 B37A 8E 39 B3			stx xx
+   699 B37D 8C 3A B3			sty yy
    700
    701
-   702 B381 A2 14			ldx #maxlin		; Max of rows/ screen
-   703 B383 A0 00			ldy #0
+   702 B380 A2 14			ldx #maxlin		; Max of rows/ screen
+   703 B382 A0 00			ldy #0
    704
-   705 B385			lll0
+   705 B384			lll0
    706
-   707 B385 B9 3D B3			lda adtab+1,y	; Get adress from table
-   708 B388 99 0B 60			sta z0+1,y		; Put it into lms of antic program => low byte
-   709 B38B C8				iny
-   710 B38C B9 3D B3			lda adtab+1,y	; Same for high byte
-   711 B38F 99 0B 60			sta z0+1,y
-   712 B392 C8				iny
-   713 B393 C8				iny
-   714 B394 CA				dex
+   707 B384 B9 3C B3			lda adtab+1,y	; Get adress from table
+   708 B387 99 0B 60			sta z0+1,y		; Put it into lms of antic program => low byte
+   709 B38A C8				iny
+   710 B38B B9 3C B3			lda adtab+1,y	; Same for high byte
+   711 B38E 99 0B 60			sta z0+1,y
+   712 B391 C8				iny
+   713 B392 C8				iny
+   714 B393 CA				dex
    715 					
-   716 B395 D0 EE			bne lll0		; All rows done?
+   716 B394 D0 EE			bne lll0		; All rows done?
    717
    718 					;
    719 					; Get number of pillars (obstacles) and height of window / pillar
    720 					;
    721
-   722 B397 AE CE AF			ldx level
-   723 B39A BD B5 B2			lda wheight,x
-   724 B39D 8D 33 B3			sta window
-   725 B3A0 BD F1 B2			lda dist,x
-   726 B3A3 8D 32 B3			sta space
+   722 B396 AE CE AF			ldx level
+   723 B399 BD B5 B2			lda wheight,x
+   724 B39C 8D 32 B3			sta window
+   725 B39F BD F1 B2			lda dist,x
+   726 B3A2 8D 31 B3			sta space
    727
    728 					;
    729 					; Clear screen 2,3,4
@@ -737,23 +737,23 @@ mads 1.9.3
    736 					; of our screen.
    737 					;
    738
-   739 B3A6 A9 8C			lda #<screen	; Pointer on screen RAM
-   740 B3A8 85 EA			sta zp6			; Store it in zero page
-   741 B3AA A9 4B			lda #>screen
-   742 B3AC 85 EB			sta zp6+1
+   739 B3A5 A9 8C			lda #<screen	; Pointer on screen RAM
+   740 B3A7 85 EA			sta zp6			; Store it in zero page
+   741 B3A9 A9 4B			lda #>screen
+   742 B3AB 85 EB			sta zp6+1
    743 					
-   744 B3AE A0 00			ldy #0
-   745 B3B0			cll1
-   746 B3B0 A2 C0			ldx #192		; Here begins screen #5
-   747 B3B2			cll2
-   748 B3B2 A9 00			lda #0			; That's the char we plot= blank
-   749 B3B4 20 1A B5			jsr plot		; Do plot
-   750 B3B7 CA				dex				; Count backwards
-   751 B3B8 E0 3C			cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
-   752 B3BA D0 F6			bne cll2		; Next x- pos
-   753 B3BC C8				iny				; Next row
-   754 B3BD C0 14			cpy #maxlin		; Until all rows are done
-   755 B3BF D0 EF			bne cll1	
+   744 B3AD A0 00			ldy #0
+   745 B3AF			cll1
+   746 B3AF A2 C0			ldx #192		; Here begins screen #5
+   747 B3B1			cll2
+   748 B3B1 A9 00			lda #0			; That's the char we plot= blank
+   749 B3B3 20 19 B5			jsr plot		; Do plot
+   750 B3B6 CA				dex				; Count backwards
+   751 B3B7 E0 3C			cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
+   752 B3B9 D0 F6			bne cll2		; Next x- pos
+   753 B3BB C8				iny				; Next row
+   754 B3BC C0 14			cpy #maxlin		; Until all rows are done
+   755 B3BE D0 EF			bne cll1	
    756 					
    757 					;
    758 					; Draw Obstacles
@@ -763,32 +763,32 @@ mads 1.9.3
    762 					; Screen 1 starts at x=4 Screen 5 starts at x=188
    763 					;
    764 					
-   765 B3C1 A2 03			ldx #3		; Draw top of screen (clouds)
-   766 B3C3 A0 00			ldy #0
-   767 B3C5 A9 05			lda #5
-   768 B3C7			lli
-   769 B3C7 20 1A B5			jsr plot
-   770 B3CA E8				inx
-   771 B3CB E0 F0			cpx #240
-   772 B3CD D0 F8			bne lli
+   765 B3C0 A2 03			ldx #3		; Draw top of screen (clouds)
+   766 B3C2 A0 00			ldy #0
+   767 B3C4 A9 05			lda #5
+   768 B3C6			lli
+   769 B3C6 20 19 B5			jsr plot
+   770 B3C9 E8				inx
+   771 B3CA E0 F0			cpx #240
+   772 B3CC D0 F8			bne lli
    773 					
-   774 B3CF A2 03			ldx #3
-   775 B3D1 A0 01			ldy #1
-   776 B3D3 A9 02			lda #2
-   777 B3D5			lli1
-   778 B3D5 20 1A B5			jsr plot	
-   779 B3D8 E8				inx			
-   780 B3D9 E0 F0			cpx #240
-   781 B3DB D0 F8			bne lli1
+   774 B3CE A2 03			ldx #3
+   775 B3D0 A0 01			ldy #1
+   776 B3D2 A9 02			lda #2
+   777 B3D4			lli1
+   778 B3D4 20 19 B5			jsr plot	
+   779 B3D7 E8				inx			
+   780 B3D8 E0 F0			cpx #240
+   781 B3DA D0 F8			bne lli1
    782 					
-   783 B3DD A2 3C			ldx #60		; Draw bottom of screen.....
-   784 B3DF A0 11			ldy #17		; mother earth :-)
-   785 B3E1 A9 07			lda #7
-   786 B3E3			lli2
-   787 B3E3 20 1A B5			jsr plot
-   788 B3E6 E8				inx
-   789 B3E7 E0 B9			cpx #185
-   790 B3E9 D0 F8			bne lli2
+   783 B3DC A2 3C			ldx #60		; Draw bottom of screen.....
+   784 B3DE A0 12			ldy #18		; mother earth :-)
+   785 B3E0 A9 07			lda #7
+   786 B3E2			lli2
+   787 B3E2 20 19 B5			jsr plot
+   788 B3E5 E8				inx
+   789 B3E6 E0 B9			cpx #185
+   790 B3E8 D0 F8			bne lli2
    791 					
    792 					;
    793 					; Draw first Screen
@@ -797,73 +797,73 @@ mads 1.9.3
    796 					; on our playfield
    797 					;
    798
-   799 B3EB A2 18			ldx #24		; SCREEN 1
+   799 B3EA A2 18			ldx #24		; SCREEN 1
    800
-   801 B3ED A9 04			lda #4		; Pilar is 4 bytes wide
-   802 B3EF 8D 36 B3			sta wide
-   803 B3F2 A9 08			lda #8		; Start color. Color will vary across width
-   804 B3F4 8D 38 B3			sta col		; to simulate some depth
-   805 B3F7			ppp1
-   806 B3F7 A0 0D			ldy #13		; Start at middle of screen
-   807 B3F9			ppp2
-   808 B3F9 AD 38 B3			lda col		; Color
-   809 B3FC 20 1A B5			jsr plot	; Plot it
-   810 B3FF C8				iny			; until we reach bottom of playfield
-   811 B400 C0 14			cpy #maxlin
-   812 B402 D0 F5			bne ppp2	
-   813 B404 E8				inx			; Repeat  
-   814 B405 EE 38 B3			inc col     ; Next color
-   815 B408 CE 36 B3			dec wide	; Drawn pilar until full width reached
-   816 B40B D0 EA			bne ppp1
+   801 B3EC A9 04			lda #4		; Pilar is 4 bytes wide
+   802 B3EE 8D 35 B3			sta wide
+   803 B3F1 A9 08			lda #8		; Start color. Color will vary across width
+   804 B3F3 8D 37 B3			sta col		; to simulate some depth
+   805 B3F6			ppp1
+   806 B3F6 A0 0D			ldy #13		; Start at middle of screen
+   807 B3F8			ppp2
+   808 B3F8 AD 37 B3			lda col		; Color
+   809 B3FB 20 19 B5			jsr plot	; Plot it
+   810 B3FE C8				iny			; until we reach bottom of playfield
+   811 B3FF C0 14			cpy #maxlin
+   812 B401 D0 F5			bne ppp2	
+   813 B403 E8				inx			; Repeat  
+   814 B404 EE 37 B3			inc col     ; Next color
+   815 B407 CE 35 B3			dec wide	; Drawn pilar until full width reached
+   816 B40A D0 EA			bne ppp1
    817 					
-   818 B40D A0 0C			ldy #12		; Draw flag pole
-   819 B40F A2 1A			ldx #26
-   820 B411			flag1
-   821 B411 A9 0C			lda #12
-   822 B413 20 1A B5			jsr plot
-   823 B416 88				dey
-   824 B417 C0 08			cpy #8
-   825 B419 D0 F6			bne flag1
+   818 B40C A0 0C			ldy #12		; Draw flag pole
+   819 B40E A2 1A			ldx #26
+   820 B410			flag1
+   821 B410 A9 0C			lda #12
+   822 B412 20 19 B5			jsr plot
+   823 B415 88				dey
+   824 B416 C0 08			cpy #8
+   825 B418 D0 F6			bne flag1
    826 					
-   827 B41B A9 8D			lda #13+128	; Set flag atop
-   828 B41D 20 1A B5			jsr plot
-   829 B420 E8				inx 
-   830 B421 A9 8E			lda #14+128
-   831 B423 20 1A B5			jsr plot
+   827 B41A A9 8D			lda #13+128	; Set flag atop
+   828 B41C 20 19 B5			jsr plot
+   829 B41F E8				inx 
+   830 B420 A9 8E			lda #14+128
+   831 B422 20 19 B5			jsr plot
    832 					
-   833 B426 A2 D0			ldx #188+20	; SCREEN 5
+   833 B425 A2 D0			ldx #188+20	; SCREEN 5
    834
-   835 B428 A9 04			lda #4		; Pilar is 4 bytes wide
-   836 B42A 8D 36 B3			sta wide
-   837 B42D A9 08			lda #8		; Start color. Color will vary across width
-   838 B42F 8D 38 B3			sta col		; to simulate some depth
-   839 B432			ppp12
-   840 B432 A0 0D			ldy #13		; Start at middle of screen
-   841 B434			ppp22
-   842 B434 AD 38 B3			lda col		; Color
-   843 B437 20 1A B5			jsr plot	; Plot it
-   844 B43A C8				iny			; until we reach bottom of playfield
-   845 B43B C0 14			cpy #maxlin
-   846 B43D D0 F5			bne ppp22	
-   847 B43F E8				inx			; Repeat  
-   848 B440 EE 38 B3			inc col     ; Next color
-   849 B443 CE 36 B3			dec wide	; Drawn pilar until full width reached
-   850 B446 D0 EA			bne ppp12
+   835 B427 A9 04			lda #4		; Pilar is 4 bytes wide
+   836 B429 8D 35 B3			sta wide
+   837 B42C A9 08			lda #8		; Start color. Color will vary across width
+   838 B42E 8D 37 B3			sta col		; to simulate some depth
+   839 B431			ppp12
+   840 B431 A0 0D			ldy #13		; Start at middle of screen
+   841 B433			ppp22
+   842 B433 AD 37 B3			lda col		; Color
+   843 B436 20 19 B5			jsr plot	; Plot it
+   844 B439 C8				iny			; until we reach bottom of playfield
+   845 B43A C0 14			cpy #maxlin
+   846 B43C D0 F5			bne ppp22	
+   847 B43E E8				inx			; Repeat  
+   848 B43F EE 37 B3			inc col     ; Next color
+   849 B442 CE 35 B3			dec wide	; Drawn pilar until full width reached
+   850 B445 D0 EA			bne ppp12
    851 					
-   852 B448 A0 0C			ldy #12		; Draw flag pole
-   853 B44A A2 D2			ldx #188+22
-   854 B44C			flag2
-   855 B44C A9 0C			lda #12
-   856 B44E 20 1A B5			jsr plot
-   857 B451 88				dey
-   858 B452 C0 08			cpy #8
-   859 B454 D0 F6			bne flag2
+   852 B447 A0 0C			ldy #12		; Draw flag pole
+   853 B449 A2 D2			ldx #188+22
+   854 B44B			flag2
+   855 B44B A9 0C			lda #12
+   856 B44D 20 19 B5			jsr plot
+   857 B450 88				dey
+   858 B451 C0 08			cpy #8
+   859 B453 D0 F6			bne flag2
    860 					
-   861 B456 A9 8D			lda #13+128	; Set flag atop. +128 for inv. char= color 5
-   862 B458 20 1A B5			jsr plot
-   863 B45B E8				inx 
-   864 B45C A9 8E			lda #14+128
-   865 B45E 20 1A B5			jsr plot
+   861 B455 A9 8D			lda #13+128	; Set flag atop. +128 for inv. char= color 5
+   862 B457 20 19 B5			jsr plot
+   863 B45A E8				inx 
+   864 B45B A9 8E			lda #14+128
+   865 B45D 20 19 B5			jsr plot
    866 					
    867 					; Draw random screen
    868 					; x pos 60 to 144 is the area of our playfield
@@ -871,100 +871,100 @@ mads 1.9.3
    870 					;
    871 					; City Background....
    872 					
-   873 B461 A2 41			ldx #65
-   874 B463			getlen
-   875 B463 AD 0A D2			lda 53770
-   876 B466 C9 12			cmp #18		; a>18?
-   877 B468 B0 F9			bcs getlen	; yes!
-   878 B46A C9 0E			cmp #14 	; no. a<14?
-   879 B46C 90 F5			bcc getlen  ; no!
+   873 B460 A2 41			ldx #65
+   874 B462			getlen
+   875 B462 AD 0A D2			lda 53770
+   876 B465 C9 12			cmp #18		; a>18?
+   877 B467 B0 F9			bcs getlen	; yes!
+   878 B469 C9 0E			cmp #14 	; no. a<14?
+   879 B46B 90 F5			bcc getlen  ; no!
    880 					
-   881 B46E A8				tay
-   882 B46F A9 06			lda #6
-   883 B471			drw
-   884 B471 20 1A B5			jsr plot
-   885 B474 C8				iny			
-   886 B475 C0 12			cpy #18
-   887 B477 D0 F8			bne drw		; Draw until we reach bottom of playfield
-   888 B479 E8				inx
-   889 B47A E0 B8			cpx #184	; Draw until we reach end of playfield (right border)
-   890 B47C D0 E5			bne getlen	; Next  building
+   881 B46D A8				tay
+   882 B46E A9 06			lda #6
+   883 B470			drw
+   884 B470 20 19 B5			jsr plot
+   885 B473 C8				iny			
+   886 B474 C0 12			cpy #18
+   887 B476 D0 F8			bne drw		; Draw until we reach bottom of playfield
+   888 B478 E8				inx
+   889 B479 E0 B8			cpx #184	; Draw until we reach end of playfield (right border)
+   890 B47B D0 E5			bne getlen	; Next  building
    891
    892 					;
    893 					; Second Part
    894 					; Draw obstacles (pilars)
    895 					;
    896
-   897 B47E A2 4B			ldx #75 	; Start at x=75 (off screen) => once again. We change pur playfield
+   897 B47D A2 4B			ldx #75 	; Start at x=75 (off screen) => once again. We change pur playfield
    898 								; while ing, so we have to hurry ahead ang change things before
    899 								; they apear on screen.....
-   900 B480			pp0
-   901 B480 A9 04			lda #4		; Each pilar is 4 bytes wide
-   902 B482 8D 36 B3			sta wide
-   903 B485 A9 08			lda #8		; Start color. Color will vary across width
-   904 B487 8D 38 B3			sta col		; to simulate some depth
-   905 B48A			pp1
-   906 B48A A0 01			ldy #1		; Start at top of screen, well, almost...
-   907 B48C			pp2
-   908 B48C AD 38 B3			lda col		; Color
-   909 B48F 20 1A B5			jsr plot	; Plot it
-   910 B492 C8				iny			; until we reach bottom of playfield
-   911 B493 C0 14			cpy #maxlin
-   912 B495 D0 F5			bne pp2	
-   913 B497 E8				inx			; Repeat  
-   914 B498 EE 38 B3			inc col     ; Next color
-   915 B49B CE 36 B3			dec wide	; Drawn pilar until full width reached
-   916 B49E D0 EA			bne pp1
-   917 B4A0 8A				txa			; Next pilar
-   918 B4A1 18				clc
-   919 B4A2 6D 32 B3			adc space	; Space between pilars
+   900 B47F			pp0
+   901 B47F A9 04			lda #4		; Each pilar is 4 bytes wide
+   902 B481 8D 35 B3			sta wide
+   903 B484 A9 08			lda #8		; Start color. Color will vary across width
+   904 B486 8D 37 B3			sta col		; to simulate some depth
+   905 B489			pp1
+   906 B489 A0 01			ldy #1		; Start at top of screen, well, almost...
+   907 B48B			pp2
+   908 B48B AD 37 B3			lda col		; Color
+   909 B48E 20 19 B5			jsr plot	; Plot it
+   910 B491 C8				iny			; until we reach bottom of playfield
+   911 B492 C0 14			cpy #maxlin
+   912 B494 D0 F5			bne pp2	
+   913 B496 E8				inx			; Repeat  
+   914 B497 EE 37 B3			inc col     ; Next color
+   915 B49A CE 35 B3			dec wide	; Drawn pilar until full width reached
+   916 B49D D0 EA			bne pp1
+   917 B49F 8A				txa			; Next pilar
+   918 B4A0 18				clc
+   919 B4A1 6D 31 B3			adc space	; Space between pilars
    920 								; CHANGE THIS, TO DRAW MORE OR LESS PILARS
-   921 B4A5 AA				tax
-   922 B4A6 E0 B8			cpx #184	; All pilars? That is the case when
-   923 B4A8 90 D6			bcc pp0		; xpos> 184
+   921 B4A4 AA				tax
+   922 B4A5 E0 B8			cpx #184	; All pilars? That is the case when
+   923 B4A7 90 D6			bcc pp0		; xpos> 184
    924
    925 					; 
    926 					; Now we insert windows in our pilars
    927 					;
    928
-   929 B4AA A2 4B			ldx #75		; once again, we start off screen
-   930 B4AC			gety			
-   931 B4AC AD 0A D2			lda 53770	; First= get random y- pos 
-   932 B4AF C9 0A			cmp #10		; a>10?
-   933 B4B1 B0 F9			bcs gety	; yes!=> to big, get another
-   934 B4B3 C9 02			cmp #2  	; no. a<0?
-   935 B4B5 90 F5			bcc gety    ; no!
-   936 B4B7 8D 35 B3			sta yp   	; y pos is between upper and lower border, save it!	
-   937 B4BA			pp01
-   938 B4BA A9 04			lda #4		; Window has same width as pilar
-   939 B4BC 8D 36 B3			sta wide
-   940 B4BF			pp02
-   941 B4BF AD 33 B3			lda window	; Window heigth
+   929 B4A9 A2 4B			ldx #75		; once again, we start off screen
+   930 B4AB			gety			
+   931 B4AB AD 0A D2			lda 53770	; First= get random y- pos 
+   932 B4AE C9 0A			cmp #10		; a>10?
+   933 B4B0 B0 F9			bcs gety	; yes!=> to big, get another
+   934 B4B2 C9 02			cmp #2  	; no. a<0?
+   935 B4B4 90 F5			bcc gety    ; no!
+   936 B4B6 8D 34 B3			sta yp   	; y pos is between upper and lower border, save it!	
+   937 B4B9			pp01
+   938 B4B9 A9 04			lda #4		; Window has same width as pilar
+   939 B4BB 8D 35 B3			sta wide
+   940 B4BE			pp02
+   941 B4BE AD 32 B3			lda window	; Window heigth
    942 								; CHANGE THIS TO INCREASE/ DECREASE DIFFICULTY
-   943 B4C2 8D 37 B3			sta length
-   944 B4C5 AD 35 B3			lda yp
-   945 B4C8 A8				tay
-   946 B4C9			pp03	
-   947 B4C9 A9 00			lda #0		; Color= blank space
-   948 B4CB 20 1A B5			jsr plot	; Plot it
-   949 B4CE C8				iny			
-   950 B4CF CE 37 B3			dec length	
-   951 B4D2 D0 F5			bne pp03
-   952 B4D4 E8				inx			; Repeat until we have drawn 
-   953 B4D5 CE 36 B3			dec wide	; full window 
-   954 B4D8 D0 E5			bne pp02
-   955 B4DA 8A				txa			; Next window
-   956 B4DB 18				clc
-   957 B4DC 6D 32 B3			adc space	; SPACE BETWEEN PILARS	
-   958 B4DF AA				tax
-   959 B4E0 E0 BC			cpx #188	; All pilars? That is the case when
-   960 B4E2 90 C8			bcc gety	; xpos> 188?
+   943 B4C1 8D 36 B3			sta length
+   944 B4C4 AD 34 B3			lda yp
+   945 B4C7 A8				tay
+   946 B4C8			pp03	
+   947 B4C8 A9 00			lda #0		; Color= blank space
+   948 B4CA 20 19 B5			jsr plot	; Plot it
+   949 B4CD C8				iny			
+   950 B4CE CE 36 B3			dec length	
+   951 B4D1 D0 F5			bne pp03
+   952 B4D3 E8				inx			; Repeat until we have drawn 
+   953 B4D4 CE 35 B3			dec wide	; full window 
+   954 B4D7 D0 E5			bne pp02
+   955 B4D9 8A				txa			; Next window
+   956 B4DA 18				clc
+   957 B4DB 6D 31 B3			adc space	; SPACE BETWEEN PILARS	
+   958 B4DE AA				tax
+   959 B4DF E0 BC			cpx #188	; All pilars? That is the case when
+   960 B4E1 90 C8			bcc gety	; xpos> 188?
    961 					
-   962 B4E4 AD 39 B3			lda aa
-   963 B4E7 AE 3A B3			ldx xx
-   964 B4EA AC 3B B3			ldy yy
+   962 B4E3 AD 38 B3			lda aa
+   963 B4E6 AE 39 B3			ldx xx
+   964 B4E9 AC 3A B3			ldy yy
    965
-   966 B4ED 60				rts			; Return
+   966 B4EC 60				rts			; Return
    967
    968 				;
    969 				; Plot 
@@ -977,550 +977,557 @@ mads 1.9.3
    976 				;
    977 				; Zeropage: zp7
    978
-   979 B4EE 00			zeichen	.byte 0
-   980 B4EF 00			xr4		.byte 0
-   981 B4F0 00			yr4		.byte 0
-   982 B4F1 00			aa4		.byte 0
+   979 B4ED 00			zeichen	.byte 0
+   980 B4EE 00			xr4		.byte 0
+   981 B4EF 00			yr4		.byte 0
+   982 B4F0 00			aa4		.byte 0
    983
-   984 B4F2			adtab2
-   985 B4F2 8C 4B			.byte a(screen)			
-   986 B4F4 82 4C			.byte a(screen+1*bytes)	
-   987 B4F6 78 4D			.byte a(screen+2*bytes)	
-   988 B4F8 6E 4E			.byte a(screen+3*bytes)	
-   989 B4FA 64 4F			.byte a(screen+4*bytes)	
-   990 B4FC 5A 50			.byte a(screen+5*bytes)	
-   991 B4FE 50 51			.byte a(screen+6*bytes)
-   992 B500 46 52			.byte a(screen+7*bytes)
-   993 B502 3C 53			.byte a(screen+8*bytes)
-   994 B504 32 54			.byte a(screen+9*bytes)
-   995 B506 28 55			.byte a(screen+10*bytes)
-   996 B508 1E 56			.byte a(screen+11*bytes)
-   997 B50A 14 57			.byte a(screen+12*bytes)
-   998 B50C 0A 58			.byte a(screen+13*bytes)
-   999 B50E 00 59			.byte a(screen+14*bytes)
-  1000 B510 F6 59			.byte a(screen+15*bytes)
-  1001 B512 EC 5A			.byte a(screen+16*bytes)
-  1002 B514 E2 5B			.byte a(screen+17*bytes)
-  1003 B516 D8 5C			.byte a(screen+18*bytes)
-  1004 B518 CE 5D			.byte a(screen+19*bytes)	; Row 20
+   984 B4F1			adtab2
+   985 B4F1 8C 4B			.byte a(screen)			
+   986 B4F3 82 4C			.byte a(screen+1*bytes)	
+   987 B4F5 78 4D			.byte a(screen+2*bytes)	
+   988 B4F7 6E 4E			.byte a(screen+3*bytes)	
+   989 B4F9 64 4F			.byte a(screen+4*bytes)	
+   990 B4FB 5A 50			.byte a(screen+5*bytes)	
+   991 B4FD 50 51			.byte a(screen+6*bytes)
+   992 B4FF 46 52			.byte a(screen+7*bytes)
+   993 B501 3C 53			.byte a(screen+8*bytes)
+   994 B503 32 54			.byte a(screen+9*bytes)
+   995 B505 28 55			.byte a(screen+10*bytes)
+   996 B507 1E 56			.byte a(screen+11*bytes)
+   997 B509 14 57			.byte a(screen+12*bytes)
+   998 B50B 0A 58			.byte a(screen+13*bytes)
+   999 B50D 00 59			.byte a(screen+14*bytes)
+  1000 B50F F6 59			.byte a(screen+15*bytes)
+  1001 B511 EC 5A			.byte a(screen+16*bytes)
+  1002 B513 E2 5B			.byte a(screen+17*bytes)
+  1003 B515 D8 5C			.byte a(screen+18*bytes)
+  1004 B517 CE 5D			.byte a(screen+19*bytes)	; Row 20
   1005
-  1006 B51A			plot	
-  1007 B51A 8E EF B4			stx xr4		; Save registers
-  1008 B51D 8C F0 B4			sty yr4
-  1009 B520 8D F1 B4			sta aa4
+  1006 B519			plot	
+  1007 B519 8E EE B4			stx xr4		; Save registers
+  1008 B51C 8C EF B4			sty yr4
+  1009 B51F 8D F0 B4			sta aa4
   1010 					
-  1011 B523 8D EE B4			sta zeichen		; Save character
-  1012 B526 A9 8C			lda #<screen	; Init pointer at screen ram
-  1013 B528 85 EC			sta zp7		
-  1014 B52A A9 4B			lda #>screen
-  1015 B52C 85 ED			sta zp7+1
+  1011 B522 8D ED B4			sta zeichen		; Save character
+  1012 B525 A9 8C			lda #<screen	; Init pointer at screen ram
+  1013 B527 85 EC			sta zp7		
+  1014 B529 A9 4B			lda #>screen
+  1015 B52B 85 ED			sta zp7+1
   1016 					
-  1017 B52E C0 00			cpy #0		; ypos equals 0, that is easy, jump
-  1018 B530 F0 0E			beq set		; to our set- routine, we don't have to calcualte line- adress
+  1017 B52D C0 00			cpy #0		; ypos equals 0, that is easy, jump
+  1018 B52F F0 0E			beq set		; to our set- routine, we don't have to calcualte line- adress
   1019 					
-  1020 B532 98				tya
-  1021 B533 0A				asl
-  1022 B534 A8				tay
-  1023 B535 B9 F2 B4			lda adtab2,y
-  1024 B538 85 EC			sta zp7
-  1025 B53A C8				iny
-  1026 B53B B9 F2 B4			lda adtab2,y
-  1027 B53E 85 ED			sta zp7+1
-  1028 B540			set
-  1029 B540 8A				txa
-  1030 B541 A8				tay
-  1031 B542 AD EE B4			lda zeichen
-  1032 B545 91 EC			sta (zp7),y
+  1020 B531 98				tya
+  1021 B532 0A				asl
+  1022 B533 A8				tay
+  1023 B534 B9 F1 B4			lda adtab2,y
+  1024 B537 85 EC			sta zp7
+  1025 B539 C8				iny
+  1026 B53A B9 F1 B4			lda adtab2,y
+  1027 B53D 85 ED			sta zp7+1
+  1028 B53F			set
+  1029 B53F 8A				txa
+  1030 B540 A8				tay
+  1031 B541 AD ED B4			lda zeichen
+  1032 B544 91 EC			sta (zp7),y
   1033 					
-  1034 B547 AE EF B4			ldx xr4		; Get registers back
-  1035 B54A AC F0 B4			ldy yr4
-  1036 B54D AD F1 B4			lda aa4
+  1034 B546 AE EE B4			ldx xr4		; Get registers back
+  1035 B549 AC EF B4			ldy yr4
+  1036 B54C AD F0 B4			lda aa4
   1037 					
-  1038 B550 60				rts	
+  1038 B54F 60				rts	
   1039 					
   1040 				;
   1041 				; DLI
   1042 				;
   1043
-  1044 B551			dli
-  1045 B551 48				pha			;  Save registers
-  1046 B552 8A				txa
-  1047 B553 48				pha
-  1048 B554 98				tya
-  1049 B555 48				pha
+  1044 B550			dli
+  1045 B550 48				pha			;  Save registers
+  1046 B551 8A				txa
+  1047 B552 48				pha
+  1048 B553 98				tya
+  1049 B554 48				pha
   1050 					
-  1051 B556 AD 0B D4			lda vcount
-  1052 B559 0A				asl
-  1053 B55A C9 26			cmp #38
-  1054 B55C B0 21			bcs dli1	; Is electron beam at row > 38?
+  1051 B555 AD 0B D4			lda vcount
+  1052 B558 0A				asl
+  1053 B559 C9 26			cmp #38
+  1054 B55B B0 21			bcs dli1	; Is electron beam at row > 38?
   1055
   1056 					;
   1057 					; Set Chset and colors for score display
   1058 					;
   1059 					
-  1060 B55E A9 44			lda #>chset	; No! Electron beam is at line # below 38
-  1061 B560 8D 09 D4			sta $d409	; so we are still within our score display
-  1062 B563 A9 05			lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 					
-  1063 B565 8D 16 D0			sta colpf0s						
-  1064 B568 A9 14			lda #20 	; Change colors for lower case characters in (basic)mode 1,2 or 0
-  1065 B56A 8D 17 D0			sta colpf1s
-  1066 B56D A9 74			lda #116
-  1067 B56F 8D 18 D0			sta colpf2s
-  1068 B572 A9 9B			lda #155
-  1069 B574 8D 19 D0			sta colpf3s
-  1070 B577 A9 0E			lda #14		; Bright white for the background
-  1071 B579 8D 0A D4			sta wsync
-  1072 B57C 8D 1A D0			sta colbaks ; Ende of screen area for score display
+  1060 B55D A9 44			lda #>chset	; No! Electron beam is at line # below 38
+  1061 B55F 8D 09 D4			sta $d409	; so we are still within our score display
+  1062 B562 A9 05			lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 					
+  1063 B564 8D 16 D0			sta colpf0s						
+  1064 B567 A9 14			lda #20 	; Change colors for lower case characters in (basic)mode 1,2 or 0
+  1065 B569 8D 17 D0			sta colpf1s
+  1066 B56C A9 74			lda #116
+  1067 B56E 8D 18 D0			sta colpf2s
+  1068 B571 A9 9B			lda #155
+  1069 B573 8D 19 D0			sta colpf3s
+  1070 B576 A9 0E			lda #14		; Bright white for the background
+  1071 B578 8D 0A D4			sta wsync
+  1072 B57B 8D 1A D0			sta colbaks ; Ende of screen area for score display
   1073
-  1074 B57F			dli1								
-  1075 B57F AD 0B D4			lda vcount	; Is electron beam at row # bigger than 38?
-  1076 B582 0A				asl			; No? So we are still in area of score display
-  1077 B583 C9 26			cmp #38		; 
-  1078 B585 90 4C			bcc dlout	; Do nothing!
+  1074 B57E			dli1								
+  1075 B57E AD 0B D4			lda vcount	; Is electron beam at row # bigger than 38?
+  1076 B581 0A				asl			; No? So we are still in area of score display
+  1077 B582 C9 26			cmp #38		; 
+  1078 B584 90 55			bcc dlout	; Do nothing!
   1079
   1080 					;
   1081 					; Set chset for playfield and playfield colors
   1082 					;
-  1083 																
-  1084 B587 A9 48			lda #>chset12 ; Electron beam has crossed row 38 that means
-  1085 B589 8D 09 D4			sta $d409	; we are in playfild area of our screen
-  1086 B58C A9 0A			lda #10		; Color for bit combination: 01
-  1087 B58E 8D 16 D0			sta colpf0s										
-  1088 B591 A9 C8			lda #200	; Color for bit combination: 10
-  1089 B593 8D 17 D0			sta colpf1s
-  1090 B596 A9 0E			lda #14		; Color for bit combination: 11
-  1091 B598 8D 18 D0			sta colpf2s
-  1092 B59B A9 18			lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
-  1093 B59D 18				clc			; The only object on screen with that color is our flag that marks
-  1094 B59E 6D CE AF			adc level	; the begining of the next level. We change that color every new
-  1095 B5A1 8D 19 D0			sta colpf3s	; level to visualize that event :-)
-  1096
-  1097 					; Draw sky
+  1083
+  1084 B586 A9 48			lda #>chset12 ; Electron beam has crossed row 38 that means
+  1085 B588 8D 09 D4			sta $d409	; we are in playfild area of our screen
+  1086
+  1087 B58B A9 C8			lda #200	; Color for bit combination: 10
+  1088 B58D 8D 17 D0			sta colpf1s									
+  1089 B590 8D 0A D4			sta wsync
+  1090 					
+  1091 B593 A9 0E			lda #14		; Color for bit combination: 11
+  1092 B595 8D 18 D0			sta colpf2s
+  1093 B598 8D 0A D4			sta wsync
+  1094 					
+  1095 B59B A9 0A			lda #10		; Color for bit combination: 01	
+  1096 B59D 8D 16 D0			sta colpf0s									
+  1097 B5A0 8D 0A D4			sta wsync
   1098
-  1099 B5A4 A2 0F			ldx #15		; Draw Background
-  1100 B5A6 A9 7F			lda #127	; Bright blue
-  1101 B5A8			dd1
-  1102 B5A8 8D 0A D4			sta wsync	; Wait until scanline is finished
-  1103 B5AB 8D 1A D0			sta colbaks ; Init background color reg.
-  1104 B5AE A0 37			ldy #55		; This determins the height of each color cycle
-  1105 B5B0			dd2
-  1106 B5B0 88				dey
-  1107 B5B1 D0 FD			bne dd2
-  1108 					
-  1109 B5B3 38				sec			; Blue get's darker
-  1110 B5B4 E9 01			sbc #1
-  1111 B5B6 CA				dex			; Until we reach the lower third
-  1112 B5B7 D0 EF			bne dd1		; of our playfield
-  1113
-  1114 					; Draw ground
-  1115
-  1116 B5B9 A2 0F			ldx #15		; Draw ground
-  1117 B5BB A9 C3			lda #195	; Start with dark green
-  1118 B5BD			dc1
-  1119 B5BD 8D 0A D4			sta wsync
-  1120 B5C0 8D 1A D0			sta colbaks
-  1121 B5C3 A0 13			ldy #19		; Height of each color cycle
-  1122 B5C5			dc2
-  1123 B5C5 88				dey			
-  1124 B5C6 D0 FD			bne dc2
-  1125 B5C8 18				clc
-  1126 B5C9 69 01			adc #1
-  1127 B5CB CA				dex
-  1128 B5CC D0 EF			bne dc1
-  1129 					
-  1130 B5CE A9 00			lda #0		; Lower border= black!
-  1131 B5D0 8D 1A D0			sta colbaks
-  1132 B5D3			dlout
-  1133 B5D3 68				pla			; Get registers back
-  1134 B5D4 A8				tay
-  1135 B5D5 68				pla
-  1136 B5D6 AA				tax
-  1137 B5D7 68				pla
-  1138 					
-  1139 B5D8 40				rti
-  1140 				;
-  1141 				; Show score
-  1142 				; 
-  1143 				; Call: 
-  1144 				; delta= Amount of points to be added to current score
-  1145 				;
-  1146
-  1147 B5D9			points
-  1148 B5D9 10 10 10 10 10 10		.byte "000000"
-  1149 B5DF			delta
-  1150 B5DF 00				.byte 0	
-  1151 B5E0			xr5
-  1152 B5E0 00				.byte 0
-  1153 B5E1			yr5
-  1154 B5E1 00				.byte 0
-  1155 					
-  1156 B5E2			score	
-  1157 B5E2 8E E0 B5			stx xr5
-  1158 B5E5 8C E1 B5			sty yr5
-  1159
-  1160 B5E8 20 F7 B5			jsr sl0
-  1161 B5EB CE DF B5			dec delta
-  1162 B5EE D0 F2			bne score
-  1163 					
-  1164 B5F0 AE E0 B5			ldx xr5
-  1165 B5F3 AC E1 B5			ldy yr5
-  1166 					
-  1167 B5F6 60				rts
-  1168
-  1169 B5F7			sl0
-  1170 B5F7 A2 05			ldx #5
-  1171
-  1172 B5F9			sl1
-  1173 B5F9 BD D9 B5			lda points,x	; Get figure
-  1174 B5FC C9 19			cmp #"9"       	; Is it "9"?
-  1175 B5FE D0 09			bne sl2			; no, increase it
-  1176
-  1177 B600 A9 10			lda #"0"     	; Yes! set to zero
-  1178 B602 9D D9 B5			sta points,X	; and get
-  1179 B605 CA				dex				; next
-  1180 B606 D0 F1			bne sl1			; figure....
-  1181
-  1182 B608 60				rts
+  1099 B5A3 A9 18			lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
+  1100 B5A5 18				clc			; The only object on screen with that color is our flag that marks
+  1101 B5A6 6D CE AF			adc level	; the begining of the next level. We change that color every new
+  1102 B5A9 8D 19 D0			sta colpf3s	; level to visualize that event :-)
+  1103
+  1104 					; Draw sky
+  1105
+  1106 B5AC A2 0F			ldx #15		; Draw Background 
+  1107 B5AE A9 7F			lda #127	; Bright blue
+  1108 B5B0			dd1
+  1109 B5B0 8D 0A D4			sta wsync	; Wait until scanline is finished
+  1110 B5B3 8D 1A D0			sta colbaks ; Init background color reg.
+  1111 B5B6 A0 4B			ldy #75		; This determins the height of each color cycle
+  1112 B5B8			dd2
+  1113 B5B8 88				dey
+  1114 B5B9 D0 FD			bne dd2
+  1115 					
+  1116 B5BB 38				sec			; Blue get's darker
+  1117 B5BC E9 01			sbc #1
+  1118 B5BE CA				dex			; Until we reach the lower third
+  1119 B5BF D0 EF			bne dd1		; of our playfield
+  1120
+  1121 					; Draw ground
+  1122
+  1123 B5C1 A2 0F			ldx #15		; Draw ground
+  1124 B5C3 A9 C3			lda #195	; Start with dark green
+  1125 B5C5			dc1
+  1126 B5C5 8D 0A D4			sta wsync
+  1127 B5C8 8D 1A D0			sta colbaks
+  1128 B5CB A0 13			ldy #19		; Height of each color cycle
+  1129 B5CD			dc2
+  1130 B5CD 88				dey			
+  1131 B5CE D0 FD			bne dc2
+  1132 B5D0 18				clc
+  1133 B5D1 69 01			adc #1
+  1134 B5D3 CA				dex
+  1135 B5D4 D0 EF			bne dc1
+  1136 					
+  1137 B5D6 A9 00			lda #0		; Lower border= black!
+  1138 B5D8 8D 1A D0			sta colbaks
+  1139 B5DB			dlout
+  1140 B5DB 68				pla			; Get registers back
+  1141 B5DC A8				tay
+  1142 B5DD 68				pla
+  1143 B5DE AA				tax
+  1144 B5DF 68				pla
+  1145 					
+  1146 B5E0 40				rti
+  1147 				;
+  1148 				; Show score
+  1149 				; 
+  1150 				; Call: 
+  1151 				; delta= Amount of points to be added to current score
+  1152 				;
+  1153
+  1154 B5E1			points
+  1155 B5E1 10 10 10 10 10 10		.byte "000000"
+  1156 B5E7			delta
+  1157 B5E7 00				.byte 0	
+  1158 B5E8			xr5
+  1159 B5E8 00				.byte 0
+  1160 B5E9			yr5
+  1161 B5E9 00				.byte 0
+  1162 					
+  1163 B5EA			score	
+  1164 B5EA 8E E8 B5			stx xr5
+  1165 B5ED 8C E9 B5			sty yr5
+  1166
+  1167 B5F0 20 FF B5			jsr sl0
+  1168 B5F3 CE E7 B5			dec delta
+  1169 B5F6 D0 F2			bne score
+  1170 					
+  1171 B5F8 AE E8 B5			ldx xr5
+  1172 B5FB AC E9 B5			ldy yr5
+  1173 					
+  1174 B5FE 60				rts
+  1175
+  1176 B5FF			sl0
+  1177 B5FF A2 05			ldx #5
+  1178
+  1179 B601			sl1
+  1180 B601 BD E1 B5			lda points,x	; Get figure
+  1181 B604 C9 19			cmp #"9"       	; Is it "9"?
+  1182 B606 D0 09			bne sl2			; no, increase it
   1183
-  1184 B609			sl2
-  1185 B609 18				clc
-  1186 B60A 69 01			adc #1
-  1187 B60C 9D D9 B5			sta points,X
-  1188 					
-  1189 B60F 60				rts
-  1190 					
-  1191 				;
-  1192 				; Show score
-  1193 				;
-  1194
-  1195 B610			showscor
-  1196 B610 8E E0 B5			stx xr5			; Save registers
-  1197 B613 8C E1 B5			sty yr5
-  1198 B616 A0 07			ldy #7			; Number of digits
-  1199 B618 A2 00			ldx #0
-  1200 B61A			ss
-  1201 B61A BD D9 B5			lda points,x	; Output- loop
-  1202 B61D 99 49 60			sta scorelin,y
-  1203 B620 E8				inx
-  1204 B621 C8				iny
-  1205 B622 E0 07			cpx #7
-  1206 B624 D0 F4			bne ss
-  1207 					
-  1208 B626 AE E0 B5			ldx xr5
-  1209 B629 AC E1 B5			ldy yr5
-  1210 					
-  1211 B62C 60				rts
-  1212
-  1213 				;
-  1214 				; CLSCORE
-  1215 				; Clear score
-  1216 				;
-  1217
-  1218 B62D			clscor
-  1219 B62D A2 00			ldx #0
-  1220 B62F			cl	
-  1221 B62F A9 10			lda #16			;=0
-  1222 B631 9D D9 B5			sta points,X
-  1223 B634 E8				inx
-  1224 B635 E0 06			cpx #6
-  1225 B637 D0 F6			bne cl
-  1226 B639 60				rts
-  1227 					
-  1228 				;
-  1229 				; Little Dirty Debugger
-  1230 				; Obsolete, game runs perfectly now :-)
-  1231 				; Use this to show any parameter you want't 
-  1232 				; It works fine as long it's not bigger than 16......
-  1233 				;
-  1234
-  1235 B63A			fig
-  1236 B63A 10 11 12 13 14 15 + 	.byte "0123456789ABVDEF"
-  1237 					
-  1238 B64A			debug
-  1239 B64A AE CE AF			ldx level
-  1240 B64D BD 3A B6			lda fig,x
-  1241 B650 8D 49 60			sta scorelin
-  1242 B653 60				rts
-  1243 					
-  1244 				;
-  1245 				; Wait
-  1246 				; Sometimes our code is to fast........
-  1247 				;
-  1248
-  1249 B654			wtt
-  1250 B654 48				pha				; Save registers
-  1251 B655 8A				txa
-  1252 B656 48				pha
-  1253 B657 98				tya
-  1254 B658 48				pha
+  1184 B608 A9 10			lda #"0"     	; Yes! set to zero
+  1185 B60A 9D E1 B5			sta points,X	; and get
+  1186 B60D CA				dex				; next
+  1187 B60E D0 F1			bne sl1			; figure....
+  1188
+  1189 B610 60				rts
+  1190
+  1191 B611			sl2
+  1192 B611 18				clc
+  1193 B612 69 01			adc #1
+  1194 B614 9D E1 B5			sta points,X
+  1195 					
+  1196 B617 60				rts
+  1197 					
+  1198 				;
+  1199 				; Show score
+  1200 				;
+  1201
+  1202 B618			showscor
+  1203 B618 8E E8 B5			stx xr5			; Save registers
+  1204 B61B 8C E9 B5			sty yr5
+  1205 B61E A0 07			ldy #7			; Number of digits
+  1206 B620 A2 00			ldx #0
+  1207 B622			ss
+  1208 B622 BD E1 B5			lda points,x	; Output- loop
+  1209 B625 99 49 60			sta scorelin,y
+  1210 B628 E8				inx
+  1211 B629 C8				iny
+  1212 B62A E0 07			cpx #7
+  1213 B62C D0 F4			bne ss
+  1214 					
+  1215 B62E AE E8 B5			ldx xr5
+  1216 B631 AC E9 B5			ldy yr5
+  1217 					
+  1218 B634 60				rts
+  1219
+  1220 				;
+  1221 				; CLSCORE
+  1222 				; Clear score
+  1223 				;
+  1224
+  1225 B635			clscor
+  1226 B635 A2 00			ldx #0
+  1227 B637			cl	
+  1228 B637 A9 10			lda #16			;=0
+  1229 B639 9D E1 B5			sta points,X
+  1230 B63C E8				inx
+  1231 B63D E0 06			cpx #6
+  1232 B63F D0 F6			bne cl
+  1233 B641 60				rts
+  1234 					
+  1235 				;
+  1236 				; Little Dirty Debugger
+  1237 				; Obsolete, game runs perfectly now :-)
+  1238 				; Use this to show any parameter you want't 
+  1239 				; It works fine as long it's not bigger than 16......
+  1240 				;
+  1241
+  1242 B642			fig
+  1243 B642 10 11 12 13 14 15 + 	.byte "0123456789ABVDEF"
+  1244 					
+  1245 B652			debug
+  1246 B652 AE CE AF			ldx level
+  1247 B655 BD 42 B6			lda fig,x
+  1248 B658 8D 49 60			sta scorelin
+  1249 B65B 60				rts
+  1250 					
+  1251 				;
+  1252 				; Wait
+  1253 				; Sometimes our code is to fast........
+  1254 				;
   1255
-  1256 B659 A2 1E			ldx #30
-  1257 B65B			ww0	
-  1258 B65B A0 C3			ldy #195
-  1259 B65D			ww1	
-  1260 B65D 88				dey
-  1261 B65E D0 FD			bne ww1
-  1262 B660 CA				dex
-  1263 B661 D0 F8			bne ww0
-  1264 					
-  1265 B663 68				pla				; Get registers back
-  1266 B664 A8				tay
-  1267 B665 68				pla
-  1268 B666 AA				tax
-  1269 B667 68				pla
-  1270 					
-  1271 B668 60				rts
-  1272 					
-  1273 				;
-  1274 				; Antic program and contents of screen RAM for
-  1275 				; our titel screen
-  1276 				;
-  1277
-  1278 				; Some useful equates ;-)
-  1279
-  1280 = 0002			gr0		equ $02					; Gr. 0
-  1281 = 0006			gr1		equ $06					; Gr. 1
-  1282 = 0007			gr2		equ $07
-  1283 = 0014			gr12	equ $14					; Gr. 12, horiz. scrolling enabeled
+  1256 B65C			wtt
+  1257 B65C 48				pha				; Save registers
+  1258 B65D 8A				txa
+  1259 B65E 48				pha
+  1260 B65F 98				tya
+  1261 B660 48				pha
+  1262
+  1263 B661 A2 1E			ldx #30
+  1264 B663			ww0	
+  1265 B663 A0 C3			ldy #195
+  1266 B665			ww1	
+  1267 B665 88				dey
+  1268 B666 D0 FD			bne ww1
+  1269 B668 CA				dex
+  1270 B669 D0 F8			bne ww0
+  1271 					
+  1272 B66B 68				pla				; Get registers back
+  1273 B66C A8				tay
+  1274 B66D 68				pla
+  1275 B66E AA				tax
+  1276 B66F 68				pla
+  1277 					
+  1278 B670 60				rts
+  1279 					
+  1280 				;
+  1281 				; Antic program and contents of screen RAM for
+  1282 				; our titel screen
+  1283 				;
   1284
-  1285 B669			dltitel							;Titel Screen
-  1286 B669 70 70 70			.byte $70,$70,$70
-  1287 B66C 47 87 B6			.byte $40+gr2,a(titel)
-  1288 B66F 06 06 06		:3	.byte gr1
-  1289 B672 70 70 70 70 70	:5	.byte 112
-  1290 					
-  1291 B677 02 02 02 02 02 02 + :13	.byte gr0
-  1292
-  1293 B684 41 69 B6			.byte $41,a(dltitel)
-  1294 B687			titel
-  1295 B687 00 00 22 2F 32 25 + 	.byte "  BORED OF FLOPPY   "
-  1296 B69B 00 00 00 00 00 00 + 	.byte "                    "
-  1297 B6AF 00 00 00 70 72 65 + 	.byte "   press <start>    "
-  1298 B6C3 00 00 00 00 00 00 + 	.byte "                    "
-  1299 					
-  1300 B6D7 00 00 00 00 00 00 + 	.byte "           RetroZock 2014               "
-  1301 B6FF 00 00 00 00 00 00 + 	.byte "          www.retrozock.com             "
-  1302 B727 00 00 00 33 6F 75 + 	.byte "   Source code available at:GitHub      "
-  1303 B74F 00 00 00 00 00 00 + 	.byte "                                        "
-  1304 B777 00 00 00 00 00 00 + 	.byte "                                        "
-  1305 B79F 00 00 00 00 00 00 + 	.byte "                                        "
-  1306 B7C7 00 00 00 00 00 00 + 	.byte "                                        "
-  1307 B7EF 00 00 00 00 00 00 + 	.byte "                                        "
-  1308 B817 00 00 00 00 00 00 + 	.byte "                                        "
-  1309 B83F 00 00 00 00 00 00 + 	.byte "                                        "
-  1310 B867 00 00 00 00 00 00 + 	.byte "                                        "
-  1311 B88F 00 00 00 00 00 00 + 	.byte "                                        "
-  1312 B8B7 00 00 00 00 00 00 + 	.byte "                   V 1.0.4B// 20.9.2014 "	
-  1313 				;	
-  1314 				; Antic program for our playfield
-  1315 				;  
-  1316
-  1317 = 00F6			bytes	equ 246							; Our playfield is 246 bytes wide
-  1318 					
-  1319 B8DF					org 24576						; Should always start at a 4k boundary
-  1320 6000			dlgame						 	
-  1321 6000-6084> 70 F0			.byte 112,112+128					; Start of Antic programm for our playfield			
-  1322 6002 46 49 60			.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
-  1323 6005 70				.byte 112							; and other important messages.....
-  1324 6006			msg
-  1325 6006 46 5D 60			.byte $40+gr1,a(message)			; Message line, tell the player what's going on
-  1326
-  1327 6009 F0				.byte $70+128						; 8 empty lines, start display- list interrupt
-  1328 					
-  1329 600A 54 8C 4B		z0	.byte $40+gr12,a(screen)			; Playfield row 0
-  1330 600D 54 82 4C		z1	.byte $40+gr12,a(screen+1*bytes) 	
-  1331 6010 54 78 4D		z2	.byte $40+gr12,a(screen+2*bytes) 
-  1332 6013 54 6E 4E		z3	.byte $40+gr12,a(screen+3*bytes) 
-  1333 6016 54 64 4F		z4	.byte $40+gr12,a(screen+4*bytes)
-  1334 6019 54 5A 50		z5	.byte $40+gr12,a(screen+5*bytes)
-  1335 601C 54 50 51		z6	.byte $40+gr12,a(screen+6*bytes)
-  1336 601F 54 46 52		z7	.byte $40+gr12,a(screen+7*bytes)
-  1337 6022 54 3C 53		z8	.byte $40+gr12,a(screen+8*bytes)
-  1338 6025 54 32 54		z9	.byte $40+gr12,a(screen+9*bytes)
-  1339 6028 54 28 55		z10	.byte $40+gr12,a(screen+10*bytes)
-  1340 602B 54 1E 56		z11	.byte $40+gr12,a(screen+11*bytes)
-  1341 602E 54 14 57		z12	.byte $40+gr12,a(screen+12*bytes)
-  1342 6031 54 0A 58		z13	.byte $40+gr12,a(screen+13*bytes)
-  1343 6034 54 00 59		z14	.byte $40+gr12,a(screen+14*bytes)
-  1344 6037 54 F6 59		z15	.byte $40+gr12,a(screen+15*bytes)
-  1345 603A 54 EC 5A		z16	.byte $40+gr12,a(screen+16*bytes) 
-  1346 603D 54 E2 5B		z17	.byte $40+gr12,a(screen+17*bytes)
-  1347 6040 54 D8 5C		z18	.byte $40+gr12,a(screen+18*bytes)
-  1348 6043 54 CE 5D		z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
-  1349 6046 41 00 60			.byte $41,a(dlgame)				 	; End of display- list, start all over again....
-  1350 					
-  1351 6049			scorelin								; Contents of screen ram for status display
-  1352 6049 00 73 63 6F 72 65 + 	.byte " score              "
-  1353 605D			message
-  1354 605D 00 26 2C 39 00 2C + 	.byte " FLY LITTLE BIRD..  "
-  1355 6071			m1
-  1356 6071 00 00 00 00 27 21 + 	.byte "    GAME OVER       "
+  1285 				; Some useful equates ;-)
+  1286
+  1287 = 0002			gr0		equ $02					; Gr. 0
+  1288 = 0006			gr1		equ $06					; Gr. 1
+  1289 = 0007			gr2		equ $07
+  1290 = 0014			gr12	equ $14					; Gr. 12, horiz. scrolling enabeled
+  1291
+  1292 B671			dltitel							;Titel Screen
+  1293 B671 70 70 70			.byte $70,$70,$70
+  1294 B674 47 8F B6			.byte $40+gr2,a(titel)
+  1295 B677 06 06 06		:3	.byte gr1
+  1296 B67A 70 70 70 70 70	:5	.byte 112
+  1297 					
+  1298 B67F 02 02 02 02 02 02 + :13	.byte gr0
+  1299
+  1300 B68C 41 71 B6			.byte $41,a(dltitel)
+  1301 B68F			titel
+  1302 B68F 00 00 22 2F 32 25 + 	.byte "  BORED OF FLOPPY   "
+  1303 B6A3 00 00 00 00 00 00 + 	.byte "                    "
+  1304 B6B7 00 00 00 70 72 65 + 	.byte "   press <start>    "
+  1305 B6CB 00 00 00 00 00 00 + 	.byte "                    "
+  1306 					
+  1307 B6DF 00 00 00 00 00 00 + 	.byte "           RetroZock 2014               "
+  1308 B707 00 00 00 00 00 00 + 	.byte "          www.retrozock.com             "
+  1309 B72F 00 00 00 33 6F 75 + 	.byte "   Source code available at:GitHub      "
+  1310 B757 00 00 00 00 00 00 + 	.byte "                                        "
+  1311 B77F 00 00 00 00 00 00 + 	.byte "                                        "
+  1312 B7A7 00 00 00 00 00 00 + 	.byte "                                        "
+  1313 B7CF 00 00 00 00 00 00 + 	.byte "                                        "
+  1314 B7F7 00 00 00 00 00 00 + 	.byte "                                        "
+  1315 B81F 00 00 00 00 00 00 + 	.byte "                                        "
+  1316 B847 00 00 00 00 00 00 + 	.byte "                                        "
+  1317 B86F 00 00 00 00 00 00 + 	.byte "                                        "
+  1318 B897 00 00 00 00 00 00 + 	.byte "                                        "
+  1319 B8BF 00 00 00 00 00 00 + 	.byte "                   V 1.0.4B// 17.10.2014"	
+  1320 				;	
+  1321 				; Antic program for our playfield
+  1322 				;  
+  1323
+  1324 = 00F6			bytes	equ 246							; Our playfield is 246 bytes wide
+  1325 					
+  1326 B8E7					org 24576						; Should always start at a 4k boundary
+  1327 6000			dlgame						 	
+  1328 6000-6084> 70 F0			.byte 112,112+128					; Start of Antic programm for our playfield			
+  1329 6002 46 49 60			.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
+  1330 6005 70				.byte 112							; and other important messages.....
+  1331 6006			msg
+  1332 6006 46 5D 60			.byte $40+gr1,a(message)			; Message line, tell the player what's going on
+  1333
+  1334 6009 F0				.byte $70+128						; 8 empty lines, start display- list interrupt
+  1335 					
+  1336 600A 54 8C 4B		z0	.byte $40+gr12,a(screen)			; Playfield row 0
+  1337 600D 54 82 4C		z1	.byte $40+gr12,a(screen+1*bytes) 	
+  1338 6010 54 78 4D		z2	.byte $40+gr12,a(screen+2*bytes) 
+  1339 6013 54 6E 4E		z3	.byte $40+gr12,a(screen+3*bytes) 
+  1340 6016 54 64 4F		z4	.byte $40+gr12,a(screen+4*bytes)
+  1341 6019 54 5A 50		z5	.byte $40+gr12,a(screen+5*bytes)
+  1342 601C 54 50 51		z6	.byte $40+gr12,a(screen+6*bytes)
+  1343 601F 54 46 52		z7	.byte $40+gr12,a(screen+7*bytes)
+  1344 6022 54 3C 53		z8	.byte $40+gr12,a(screen+8*bytes)
+  1345 6025 54 32 54		z9	.byte $40+gr12,a(screen+9*bytes)
+  1346 6028 54 28 55		z10	.byte $40+gr12,a(screen+10*bytes)
+  1347 602B 54 1E 56		z11	.byte $40+gr12,a(screen+11*bytes)
+  1348 602E 54 14 57		z12	.byte $40+gr12,a(screen+12*bytes)
+  1349 6031 54 0A 58		z13	.byte $40+gr12,a(screen+13*bytes)
+  1350 6034 54 00 59		z14	.byte $40+gr12,a(screen+14*bytes)
+  1351 6037 54 F6 59		z15	.byte $40+gr12,a(screen+15*bytes)
+  1352 603A 54 EC 5A		z16	.byte $40+gr12,a(screen+16*bytes) 
+  1353 603D 54 E2 5B		z17	.byte $40+gr12,a(screen+17*bytes)
+  1354 6040 54 D8 5C		z18	.byte $40+gr12,a(screen+18*bytes)
+  1355 6043 54 CE 5D		z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
+  1356 6046 41 00 60			.byte $41,a(dlgame)				 	; End of display- list, start all over again....
   1357 					
-  1358 				;
-  1359 				; Charset data
-  1360 				;
-  1361 				; For: Text (Atari Basic-) text modes 0,1,2 
-  1362 				;
-  1363
-  1364 6085				 org 17408
-  1365 4400			chset
-  1366 4400-4B8B> 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$00,$00
-  1367 4408 02 02 02 02 02 02 + 	.byte $02,$02,$02,$02,$02,$02,$02,$02
-  1368 4410 40 40 40 40 40 40 + 	.byte $40,$40,$40,$40,$40,$40,$40,$40,$00,$66,$FF,$FF,$66,$FF,$66,$00
-  1369 4420 18 7E 7E 60 7E 06 + 	.byte $18,$7E,$7E,$60,$7E,$06,$7E,$18,$00,$66,$6C,$18,$30,$66,$46,$00
-  1370 4430 3E 36 1E 78 6F 7E + 	.byte $3E,$36,$1E,$78,$6F,$7E,$7B,$00,$00,$18,$18,$18,$00,$00,$00,$00
-  1371 4440 00 3E 3E 38 38 38 + 	.byte $00,$3E,$3E,$38,$38,$38,$3E,$00,$00,$7C,$7C,$1C,$1C,$1C,$7C,$00
-  1372 4450 00 66 3C FF 3C 66 + 	.byte $00,$66,$3C,$FF,$3C,$66,$00,$00,$00,$18,$18,$7E,$7E,$18,$18,$00
-  1373 4460 00 00 00 00 00 18 + 	.byte $00,$00,$00,$00,$00,$18,$18,$38,$00,$00,$00,$7E,$7E,$00,$00,$00
-  1374 4470 00 00 00 00 00 38 + 	.byte $00,$00,$00,$00,$00,$38,$38,$00,$00,$06,$0E,$1C,$38,$70,$60,$00
-  1375 4480 00 7E 7E 66 66 66 + 	.byte $00,$7E,$7E,$66,$66,$66,$7E,$00,$00,$38,$38,$18,$18,$7E,$7E,$00
-  1376 4490 00 7E 76 0C 38 70 + 	.byte $00,$7E,$76,$0C,$38,$70,$7E,$00,$00,$7E,$7E,$0C,$1C,$66,$3C,$00
-  1377 44A0 00 1C 3C 7C 6E 7E + 	.byte $00,$1C,$3C,$7C,$6E,$7E,$0C,$00,$00,$7E,$7E,$60,$7E,$0E,$7C,$00
-  1378 44B0 00 7E 7E 60 7E 66 + 	.byte $00,$7E,$7E,$60,$7E,$66,$7E,$00,$00,$7E,$7E,$0C,$18,$30,$30,$00
-  1379 44C0 00 7E 7E 66 3C 66 + 	.byte $00,$7E,$7E,$66,$3C,$66,$7E,$00,$00,$7E,$7E,$66,$7E,$06,$7E,$00
-  1380 44D0 00 00 38 38 00 38 + 	.byte $00,$00,$38,$38,$00,$38,$38,$00,$00,$00,$18,$18,$00,$18,$38,$38
-  1381 44E0 06 0C 18 30 18 0C + 	.byte $06,$0C,$18,$30,$18,$0C,$06,$00,$00,$00,$7E,$00,$00,$7E,$00,$00
-  1382 44F0 60 30 18 0C 18 30 + 	.byte $60,$30,$18,$0C,$18,$30,$60,$00,$00,$7E,$7E,$06,$1E,$00,$1C,$1C
-  1383 4500 00 7E 7A 6E 6E 60 + 	.byte $00,$7E,$7A,$6E,$6E,$60,$7E,$00,$00,$7E,$7E,$66,$66,$7E,$66,$00
-  1384 4510 00 7E 7E 66 7C 66 + 	.byte $00,$7E,$7E,$66,$7C,$66,$7E,$00,$00,$7E,$7E,$66,$60,$66,$7E,$00
-  1385 4520 00 7C 7E 66 66 6C + 	.byte $00,$7C,$7E,$66,$66,$6C,$78,$00,$00,$7E,$7E,$60,$7E,$60,$7E,$00
-  1386 4530 00 7E 7E 60 78 60 + 	.byte $00,$7E,$7E,$60,$78,$60,$60,$00,$00,$7E,$7E,$60,$6E,$66,$7E,$00
-  1387 4540 00 66 66 66 7E 7E + 	.byte $00,$66,$66,$66,$7E,$7E,$66,$00,$00,$7E,$7E,$18,$18,$18,$7E,$00
-  1388 4550 00 1E 1E 06 66 66 + 	.byte $00,$1E,$1E,$06,$66,$66,$7E,$00,$00,$66,$66,$6C,$78,$7C,$66,$00
-  1389 4560 00 60 60 60 66 7E + 	.byte $00,$60,$60,$60,$66,$7E,$7E,$00,$00,$63,$77,$77,$7F,$6B,$63,$00
-  1390 4570 00 76 76 7E 6E 66 + 	.byte $00,$76,$76,$7E,$6E,$66,$66,$00,$00,$7E,$7E,$66,$66,$66,$7E,$00
-  1391 4580 00 7E 7E 66 66 7E + 	.byte $00,$7E,$7E,$66,$66,$7E,$60,$00,$00,$7E,$7E,$66,$66,$6C,$76,$00
-  1392 4590 00 7E 7E 66 64 7C + 	.byte $00,$7E,$7E,$66,$64,$7C,$66,$00,$00,$7E,$7E,$60,$7E,$06,$7E,$00
-  1393 45A0 00 7E 7E 18 18 18 + 	.byte $00,$7E,$7E,$18,$18,$18,$18,$00,$00,$66,$66,$66,$66,$7E,$7E,$00
-  1394 45B0 00 66 66 66 66 3C + 	.byte $00,$66,$66,$66,$66,$3C,$3C,$00,$00,$63,$63,$6B,$7F,$7F,$77,$00
-  1395 45C0 00 66 66 3C 3C 7E + 	.byte $00,$66,$66,$3C,$3C,$7E,$66,$00,$00,$66,$66,$7E,$7E,$18,$18,$00
-  1396 45D0 00 7E 7E 0C 38 60 + 	.byte $00,$7E,$7E,$0C,$38,$60,$7E,$00,$00,$1E,$1E,$18,$18,$18,$1E,$00
-  1397 45E0 00 40 60 30 18 0C + 	.byte $00,$40,$60,$30,$18,$0C,$06,$00,$00,$78,$78,$18,$18,$18,$78,$00
-  1398 45F0 00 08 1C 3E 63 00 + 	.byte $00,$08,$1C,$3E,$63,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$00
-  1399 4600 00 36 7F 7F 3E 1C + 	.byte $00,$36,$7F,$7F,$3E,$1C,$08,$00,$18,$18,$18,$1F,$1F,$18,$18,$18
-  1400 4610 03 03 03 03 03 03 + 	.byte $03,$03,$03,$03,$03,$03,$03,$03,$18,$18,$18,$F8,$F8,$00,$00,$00
-  1401 4620 18 18 18 F8 F8 18 + 	.byte $18,$18,$18,$F8,$F8,$18,$18,$18,$00,$00,$00,$F8,$F8,$18,$18,$18
-  1402 4630 03 07 0E 1C 38 70 + 	.byte $03,$07,$0E,$1C,$38,$70,$E0,$C0,$C0,$E0,$70,$38,$1C,$0E,$07,$03
-  1403 4640 01 03 07 0F 1F 3F + 	.byte $01,$03,$07,$0F,$1F,$3F,$7F,$FF,$00,$00,$00,$00,$0F,$0F,$0F,$0F
-  1404 4650 80 C0 E0 F0 F8 FC + 	.byte $80,$C0,$E0,$F0,$F8,$FC,$FE,$FF,$0F,$0F,$0F,$0F,$00,$00,$00,$00
-  1405 4660 F0 F0 F0 F0 00 00 + 	.byte $F0,$F0,$F0,$F0,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$00,$00
-  1406 4670 00 00 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$F0,$F0,$F0,$F0
-  1407 4680 00 1C 1C 7F 77 1C + 	.byte $00,$1C,$1C,$7F,$77,$1C,$3E,$00,$00,$00,$00,$1F,$1F,$18,$18,$18
-  1408 4690 00 00 00 FF FF 00 + 	.byte $00,$00,$00,$FF,$FF,$00,$00,$00,$18,$18,$18,$FF,$FF,$18,$18,$18
-  1409 46A0 00 00 3C 7E 7E 7E + 	.byte $00,$00,$3C,$7E,$7E,$7E,$3C,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF
-  1410 46B0 C0 C0 C0 C0 C0 C0 + 	.byte $C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00,$00,$00,$FF,$FF,$18,$18,$18
-  1411 46C0 18 18 18 FF FF 00 + 	.byte $18,$18,$18,$FF,$FF,$00,$00,$00,$F0,$F0,$F0,$F0,$F0,$F0,$F0,$F0
-  1412 46D0 18 18 18 1F 1F 00 + 	.byte $18,$18,$18,$1F,$1F,$00,$00,$00,$7C,$7C,$60,$78,$60,$7E,$18,$1E
-  1413 46E0 00 18 3C 7E 18 18 + 	.byte $00,$18,$3C,$7E,$18,$18,$18,$00,$00,$18,$18,$18,$7E,$3C,$18,$00
-  1414 46F0 00 18 30 7E 30 18 + 	.byte $00,$18,$30,$7E,$30,$18,$00,$00,$00,$18,$0C,$7E,$0C,$18,$00,$00
-  1415 4700 00 18 3C 7E 7E 3C + 	.byte $00,$18,$3C,$7E,$7E,$3C,$18,$00,$00,$00,$7E,$06,$7E,$66,$7E,$00
-  1416 4710 00 60 60 7E 7E 66 + 	.byte $00,$60,$60,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$7E,$60,$60,$7E,$00
-  1417 4720 00 06 06 7E 7E 66 + 	.byte $00,$06,$06,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$66,$7E,$60,$7E,$00
-  1418 4730 00 1E 1E 18 7E 18 + 	.byte $00,$1E,$1E,$18,$7E,$18,$18,$00,$00,$00,$7E,$7E,$66,$7E,$06,$7E
-  1419 4740 00 60 60 7E 7E 66 + 	.byte $00,$60,$60,$7E,$7E,$66,$66,$00,$38,$38,$00,$38,$38,$18,$3C,$00
-  1420 4750 00 06 00 06 06 06 + 	.byte $00,$06,$00,$06,$06,$06,$3E,$3E,$00,$60,$60,$66,$7C,$7C,$66,$00
-  1421 4760 00 38 38 18 18 3C + 	.byte $00,$38,$38,$18,$18,$3C,$3C,$00,$00,$00,$77,$77,$7F,$7F,$6B,$00
-  1422 4770 00 00 7E 7E 66 66 + 	.byte $00,$00,$7E,$7E,$66,$66,$66,$00,$00,$00,$7E,$7E,$66,$66,$7E,$00
-  1423 4780 00 00 7E 7E 66 7E + 	.byte $00,$00,$7E,$7E,$66,$7E,$60,$60,$00,$00,$7E,$7E,$66,$7E,$06,$06
-  1424 4790 00 00 7E 7E 60 60 + 	.byte $00,$00,$7E,$7E,$60,$60,$60,$00,$00,$00,$7E,$60,$7E,$06,$7E,$00
-  1425 47A0 00 18 7E 7E 18 18 + 	.byte $00,$18,$7E,$7E,$18,$18,$1E,$00,$00,$00,$66,$66,$66,$7E,$7E,$00
-  1426 47B0 00 00 66 66 7E 3C + 	.byte $00,$00,$66,$66,$7E,$3C,$18,$00,$00,$00,$63,$6B,$7F,$7F,$77,$00
-  1427 47C0 00 00 66 7E 3C 7E + 	.byte $00,$00,$66,$7E,$3C,$7E,$66,$00,$00,$00,$66,$66,$7E,$7E,$0E,$7E
-  1428 47D0 00 00 7E 7E 18 30 + 	.byte $00,$00,$7E,$7E,$18,$30,$7E,$00,$00,$18,$3C,$7E,$7E,$18,$3C,$00
-  1429 47E0 18 18 18 18 18 18 + 	.byte $18,$18,$18,$18,$18,$18,$18,$18,$00,$7E,$78,$7C,$6E,$67,$03,$00
-  1430 47F0 FF FF FF FF FF FF + 	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$54,$54,$54,$54,$54,$54,$00
-  1431 					
-  1432 				;
-  1433 				; Charset data
-  1434 				;
-  1435 				; For: Text (Atari Basic-) text modes 12 and 13 
-  1436 				;
-  1437 				; They are not ordered :(
-  1438 				;
-  1439
-  1440 4800					org 18432														
-  1441 						
-  1442 4800			chset12
-  1443 4800 00 00 00 00 00 00 + :8		.byte 0																; Empty						//0
-  1444 4808 7F 7F 7F 1F 1F 07 +  		.byte 127,127,127,31,31,7,7,1										; Cloud tile 1, bottom left //1
-  1445 4810 FF 7D 14 00 00 00 + 		.byte 255,125,20,0,0,0,0,0											; Cloud tile bottom			//2
-  1446 4818 00 00 14 7D FF FF + 		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cloud tile top			//3
-  1447 4820 FD FD F4 F4 D0 D0 + 		.byte 253	,	253	,	244	,	244	,	208	,	208	,	64	,	64  ; Cloud tile, bottom right	//4
-  1448 4828 FF FF FF FF FF FF + :8		.byte 255															; Cloud tile, solid block	//5
-  1449
-  1450 4830 55 55 55 55 55 55 + :8		.byte 85															; Solid black block			//6		
-  1451 4838 55 55 55 55 55 65 + 		.byte 85	,	85	,	85	,	85	,	85	,	101	,	166	,	170 ; Solid black block, bottom //7
-  1452
-  1453 4840 BB BB BB BB BB BB + :8		.byte 187													        ; Light green block 		//8
-  1454 4848 BA BA BA BA BA BA + 		.byte 186	,	186	,	186	,	186	,	186	,	186	,	186	,	186	; Not so light green block  //9
-  1455 4850 AE AE AE AE AE AE + :8		.byte 174															; Solid green block			//10
-  1456 4858 AB AB AB AB AB AB + :8		.byte 171															; Solid green block			//11
-  1457 4860 40 40 40 40 40 40 + :8		.byte 64															; Flag pole 				//12
-  1458 4868 4C 7F 7F 7F 7F 7F + 	    .byte 76	,	127	,	127	,	127	,	127	,	127	,	127	,	76  ; Flag part 	1			//13
-  1459 4870 CF FF FC FC FC FC + 		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14
-  1460 4878 55 55 41 41 41 55 + 		.byte 85	,	85	,	65	,	65	,	65	,	85	,	85	,	85  ; Building part with window //15
-  1461 					
-  1462 				;
-  1463 				; A poem
-  1464 				;
-  1465
-  1466 4880			poem
-  1467 4880 00 00 6F 68 00 68 + 	.byte "  oh have i surely.."
-  1468 4894 00 00 73 6C 69 70 + 	.byte "  slipped the bonds."
-  1469 48A8 00 00 6F 66 00 65 + 	.byte "  of earth and...   "
-  1470 48BC 00 00 64 61 6E 63 + 	.byte "  danced the skies.."
-  1471 48D0 00 00 6F 6E 00 6C + 	.byte "  on laughter       "
-  1472 48E4 00 00 73 69 6C 76 + 	.byte "  silvered wings    "
-  1473 48F8 00 00 73 75 6E 77 + 	.byte "  sunward i climbed "
-  1474 490C 00 00 61 6E 64 00 + 	.byte "  and joined the    "	
-  1475 4920 00 00 74 75 6D 62 + 	.byte "  tumbeling mirth of"
-  1476 4934 00 00 73 75 6E 00 + 	.byte "  sun splid clouds  "
-  1477 4948 00 00 61 6E 64 00 + 	.byte "  and done hundred  "
-  1478 495C 00 00 74 68 69 6E + 	.byte "  things you have   "
-  1479 4970 00 00 6E 6F 74 00 + 	.byte "  not dreamed of -- "
-  1480 4984 00 00 77 68 65 65 + 	.byte "  wheeled and soared"
-  1481 4998 00 00 61 6E 64 00 + 	.byte "  and swung high in "
-  1482 49AC 00 00 74 68 65 00 + 	.byte "  the sunlit silence"
-  1483 49C0 00 00 68 6F 76 07 + 	.byte "  hov'ring there    "
-  1484 49D4 00 00 69 00 63 68 + 	.byte "  i chased the      "
-  1485 49E8 00 00 73 6F 75 74 + 	.byte "  souting wind      "
-  1486 49FC 00 00 61 6C 6F 6E + 	.byte "  along and flung   "
-  1487 4A10 00 00 6D 79 00 65 + 	.byte "  my eager craft    "
-  1488 4A24 00 00 74 68 72 6F + 	.byte "  throgh footless   "
-  1489 4A38 00 00 68 61 6C 6C + 	.byte "  halls of air.     "
-  1490 4A4C 00 00 75 70 00 75 + 	.byte "  up up the long    "
-  1491 4A60 00 00 64 65 6C 69 + 	.byte "  delirious burning "
-  1492 4A74 00 00 62 6C 75 65 + 	.byte "  blue........      "
-  1493 4A88 00 00 69 07 76 65 + 	.byte "  i've topped the   "
-  1494 4A9C 00 00 77 69 6E 64 + 	.byte "  windswept heights "
-  1495 4AB0 00 00 77 69 74 68 + 	.byte "  with easy grace   "
-  1496 4AC4 00 00 77 68 65 72 + 	.byte "  where never lark  "
-  1497 4AD8 00 00 6F 72 00 65 + 	.byte "  or even eagle flew"
-  1498 4AEC 00 00 61 6E 64 00 + 	.byte "  and while, with   "
-  1499 4B00 00 77 69 74 68 00 + 	.byte " with silent lifting"
-  1500 4B14 00 00 6D 69 6E 64 + 	.byte "  mind i've trod the"
-  1501 4B28 00 68 65 69 67 68 + 	.byte " heigh untresspassed"
-  1502 4B3C 00 00 63 61 6E 63 + 	.byte "  canctity of space "
-  1503 4B50 00 00 70 75 74 00 + 	.byte "  put out my hand   "
-  1504 4B64 00 00 61 6E 64 00 + 	.byte "  and touced the    "
-  1505 4B78 00 00 64 8B 66 61 + 	.byte "  d«face of god.    "    		
-  1506 											
-  1507 				;
-  1508 				; Screen- ram of playfield
-  1509 				;
-  1510
-  1511 4B8C			screen
-  1512 4B8C				org 32768
-  1513 					
-  1514 8000			screen2
-  1515 8000				org 40000
-  1516
+  1358 6049			scorelin								; Contents of screen ram for status display
+  1359 6049 00 73 63 6F 72 65 + 	.byte " score              "
+  1360 605D			message
+  1361 605D 00 26 2C 39 00 2C + 	.byte " FLY LITTLE BIRD..  "
+  1362 6071			m1
+  1363 6071 00 00 00 00 27 21 + 	.byte "    GAME OVER       "
+  1364 					
+  1365 				;
+  1366 				; Charset data
+  1367 				;
+  1368 				; For: Text (Atari Basic-) text modes 0,1,2 
+  1369 				;
+  1370
+  1371 6085				 org 17408
+  1372 4400			chset
+  1373 4400-4B8B> 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$00,$00
+  1374 4408 02 02 02 02 02 02 + 	.byte $02,$02,$02,$02,$02,$02,$02,$02
+  1375 4410 40 40 40 40 40 40 + 	.byte $40,$40,$40,$40,$40,$40,$40,$40,$00,$66,$FF,$FF,$66,$FF,$66,$00
+  1376 4420 18 7E 7E 60 7E 06 + 	.byte $18,$7E,$7E,$60,$7E,$06,$7E,$18,$00,$66,$6C,$18,$30,$66,$46,$00
+  1377 4430 3E 36 1E 78 6F 7E + 	.byte $3E,$36,$1E,$78,$6F,$7E,$7B,$00,$00,$18,$18,$18,$00,$00,$00,$00
+  1378 4440 00 3E 3E 38 38 38 + 	.byte $00,$3E,$3E,$38,$38,$38,$3E,$00,$00,$7C,$7C,$1C,$1C,$1C,$7C,$00
+  1379 4450 00 66 3C FF 3C 66 + 	.byte $00,$66,$3C,$FF,$3C,$66,$00,$00,$00,$18,$18,$7E,$7E,$18,$18,$00
+  1380 4460 00 00 00 00 00 18 + 	.byte $00,$00,$00,$00,$00,$18,$18,$38,$00,$00,$00,$7E,$7E,$00,$00,$00
+  1381 4470 00 00 00 00 00 38 + 	.byte $00,$00,$00,$00,$00,$38,$38,$00,$00,$06,$0E,$1C,$38,$70,$60,$00
+  1382 4480 00 7E 7E 66 66 66 + 	.byte $00,$7E,$7E,$66,$66,$66,$7E,$00,$00,$38,$38,$18,$18,$7E,$7E,$00
+  1383 4490 00 7E 76 0C 38 70 + 	.byte $00,$7E,$76,$0C,$38,$70,$7E,$00,$00,$7E,$7E,$0C,$1C,$66,$3C,$00
+  1384 44A0 00 1C 3C 7C 6E 7E + 	.byte $00,$1C,$3C,$7C,$6E,$7E,$0C,$00,$00,$7E,$7E,$60,$7E,$0E,$7C,$00
+  1385 44B0 00 7E 7E 60 7E 66 + 	.byte $00,$7E,$7E,$60,$7E,$66,$7E,$00,$00,$7E,$7E,$0C,$18,$30,$30,$00
+  1386 44C0 00 7E 7E 66 3C 66 + 	.byte $00,$7E,$7E,$66,$3C,$66,$7E,$00,$00,$7E,$7E,$66,$7E,$06,$7E,$00
+  1387 44D0 00 00 38 38 00 38 + 	.byte $00,$00,$38,$38,$00,$38,$38,$00,$00,$00,$18,$18,$00,$18,$38,$38
+  1388 44E0 06 0C 18 30 18 0C + 	.byte $06,$0C,$18,$30,$18,$0C,$06,$00,$00,$00,$7E,$00,$00,$7E,$00,$00
+  1389 44F0 60 30 18 0C 18 30 + 	.byte $60,$30,$18,$0C,$18,$30,$60,$00,$00,$7E,$7E,$06,$1E,$00,$1C,$1C
+  1390 4500 00 7E 7A 6E 6E 60 + 	.byte $00,$7E,$7A,$6E,$6E,$60,$7E,$00,$00,$7E,$7E,$66,$66,$7E,$66,$00
+  1391 4510 00 7E 7E 66 7C 66 + 	.byte $00,$7E,$7E,$66,$7C,$66,$7E,$00,$00,$7E,$7E,$66,$60,$66,$7E,$00
+  1392 4520 00 7C 7E 66 66 6C + 	.byte $00,$7C,$7E,$66,$66,$6C,$78,$00,$00,$7E,$7E,$60,$7E,$60,$7E,$00
+  1393 4530 00 7E 7E 60 78 60 + 	.byte $00,$7E,$7E,$60,$78,$60,$60,$00,$00,$7E,$7E,$60,$6E,$66,$7E,$00
+  1394 4540 00 66 66 66 7E 7E + 	.byte $00,$66,$66,$66,$7E,$7E,$66,$00,$00,$7E,$7E,$18,$18,$18,$7E,$00
+  1395 4550 00 1E 1E 06 66 66 + 	.byte $00,$1E,$1E,$06,$66,$66,$7E,$00,$00,$66,$66,$6C,$78,$7C,$66,$00
+  1396 4560 00 60 60 60 66 7E + 	.byte $00,$60,$60,$60,$66,$7E,$7E,$00,$00,$63,$77,$77,$7F,$6B,$63,$00
+  1397 4570 00 76 76 7E 6E 66 + 	.byte $00,$76,$76,$7E,$6E,$66,$66,$00,$00,$7E,$7E,$66,$66,$66,$7E,$00
+  1398 4580 00 7E 7E 66 66 7E + 	.byte $00,$7E,$7E,$66,$66,$7E,$60,$00,$00,$7E,$7E,$66,$66,$6C,$76,$00
+  1399 4590 00 7E 7E 66 64 7C + 	.byte $00,$7E,$7E,$66,$64,$7C,$66,$00,$00,$7E,$7E,$60,$7E,$06,$7E,$00
+  1400 45A0 00 7E 7E 18 18 18 + 	.byte $00,$7E,$7E,$18,$18,$18,$18,$00,$00,$66,$66,$66,$66,$7E,$7E,$00
+  1401 45B0 00 66 66 66 66 3C + 	.byte $00,$66,$66,$66,$66,$3C,$3C,$00,$00,$63,$63,$6B,$7F,$7F,$77,$00
+  1402 45C0 00 66 66 3C 3C 7E + 	.byte $00,$66,$66,$3C,$3C,$7E,$66,$00,$00,$66,$66,$7E,$7E,$18,$18,$00
+  1403 45D0 00 7E 7E 0C 38 60 + 	.byte $00,$7E,$7E,$0C,$38,$60,$7E,$00,$00,$1E,$1E,$18,$18,$18,$1E,$00
+  1404 45E0 00 40 60 30 18 0C + 	.byte $00,$40,$60,$30,$18,$0C,$06,$00,$00,$78,$78,$18,$18,$18,$78,$00
+  1405 45F0 00 08 1C 3E 63 00 + 	.byte $00,$08,$1C,$3E,$63,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$00
+  1406 4600 00 36 7F 7F 3E 1C + 	.byte $00,$36,$7F,$7F,$3E,$1C,$08,$00,$18,$18,$18,$1F,$1F,$18,$18,$18
+  1407 4610 03 03 03 03 03 03 + 	.byte $03,$03,$03,$03,$03,$03,$03,$03,$18,$18,$18,$F8,$F8,$00,$00,$00
+  1408 4620 18 18 18 F8 F8 18 + 	.byte $18,$18,$18,$F8,$F8,$18,$18,$18,$00,$00,$00,$F8,$F8,$18,$18,$18
+  1409 4630 03 07 0E 1C 38 70 + 	.byte $03,$07,$0E,$1C,$38,$70,$E0,$C0,$C0,$E0,$70,$38,$1C,$0E,$07,$03
+  1410 4640 01 03 07 0F 1F 3F + 	.byte $01,$03,$07,$0F,$1F,$3F,$7F,$FF,$00,$00,$00,$00,$0F,$0F,$0F,$0F
+  1411 4650 80 C0 E0 F0 F8 FC + 	.byte $80,$C0,$E0,$F0,$F8,$FC,$FE,$FF,$0F,$0F,$0F,$0F,$00,$00,$00,$00
+  1412 4660 F0 F0 F0 F0 00 00 + 	.byte $F0,$F0,$F0,$F0,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$00,$00
+  1413 4670 00 00 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$FF,$FF,$00,$00,$00,$00,$F0,$F0,$F0,$F0
+  1414 4680 00 1C 1C 7F 77 1C + 	.byte $00,$1C,$1C,$7F,$77,$1C,$3E,$00,$00,$00,$00,$1F,$1F,$18,$18,$18
+  1415 4690 00 00 00 FF FF 00 + 	.byte $00,$00,$00,$FF,$FF,$00,$00,$00,$18,$18,$18,$FF,$FF,$18,$18,$18
+  1416 46A0 00 00 3C 7E 7E 7E + 	.byte $00,$00,$3C,$7E,$7E,$7E,$3C,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF
+  1417 46B0 C0 C0 C0 C0 C0 C0 + 	.byte $C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00,$00,$00,$FF,$FF,$18,$18,$18
+  1418 46C0 18 18 18 FF FF 00 + 	.byte $18,$18,$18,$FF,$FF,$00,$00,$00,$F0,$F0,$F0,$F0,$F0,$F0,$F0,$F0
+  1419 46D0 18 18 18 1F 1F 00 + 	.byte $18,$18,$18,$1F,$1F,$00,$00,$00,$7C,$7C,$60,$78,$60,$7E,$18,$1E
+  1420 46E0 00 18 3C 7E 18 18 + 	.byte $00,$18,$3C,$7E,$18,$18,$18,$00,$00,$18,$18,$18,$7E,$3C,$18,$00
+  1421 46F0 00 18 30 7E 30 18 + 	.byte $00,$18,$30,$7E,$30,$18,$00,$00,$00,$18,$0C,$7E,$0C,$18,$00,$00
+  1422 4700 00 18 3C 7E 7E 3C + 	.byte $00,$18,$3C,$7E,$7E,$3C,$18,$00,$00,$00,$7E,$06,$7E,$66,$7E,$00
+  1423 4710 00 60 60 7E 7E 66 + 	.byte $00,$60,$60,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$7E,$60,$60,$7E,$00
+  1424 4720 00 06 06 7E 7E 66 + 	.byte $00,$06,$06,$7E,$7E,$66,$7E,$00,$00,$00,$7E,$66,$7E,$60,$7E,$00
+  1425 4730 00 1E 1E 18 7E 18 + 	.byte $00,$1E,$1E,$18,$7E,$18,$18,$00,$00,$00,$7E,$7E,$66,$7E,$06,$7E
+  1426 4740 00 60 60 7E 7E 66 + 	.byte $00,$60,$60,$7E,$7E,$66,$66,$00,$38,$38,$00,$38,$38,$18,$3C,$00
+  1427 4750 00 06 00 06 06 06 + 	.byte $00,$06,$00,$06,$06,$06,$3E,$3E,$00,$60,$60,$66,$7C,$7C,$66,$00
+  1428 4760 00 38 38 18 18 3C + 	.byte $00,$38,$38,$18,$18,$3C,$3C,$00,$00,$00,$77,$77,$7F,$7F,$6B,$00
+  1429 4770 00 00 7E 7E 66 66 + 	.byte $00,$00,$7E,$7E,$66,$66,$66,$00,$00,$00,$7E,$7E,$66,$66,$7E,$00
+  1430 4780 00 00 7E 7E 66 7E + 	.byte $00,$00,$7E,$7E,$66,$7E,$60,$60,$00,$00,$7E,$7E,$66,$7E,$06,$06
+  1431 4790 00 00 7E 7E 60 60 + 	.byte $00,$00,$7E,$7E,$60,$60,$60,$00,$00,$00,$7E,$60,$7E,$06,$7E,$00
+  1432 47A0 00 18 7E 7E 18 18 + 	.byte $00,$18,$7E,$7E,$18,$18,$1E,$00,$00,$00,$66,$66,$66,$7E,$7E,$00
+  1433 47B0 00 00 66 66 7E 3C + 	.byte $00,$00,$66,$66,$7E,$3C,$18,$00,$00,$00,$63,$6B,$7F,$7F,$77,$00
+  1434 47C0 00 00 66 7E 3C 7E + 	.byte $00,$00,$66,$7E,$3C,$7E,$66,$00,$00,$00,$66,$66,$7E,$7E,$0E,$7E
+  1435 47D0 00 00 7E 7E 18 30 + 	.byte $00,$00,$7E,$7E,$18,$30,$7E,$00,$00,$18,$3C,$7E,$7E,$18,$3C,$00
+  1436 47E0 18 18 18 18 18 18 + 	.byte $18,$18,$18,$18,$18,$18,$18,$18,$00,$7E,$78,$7C,$6E,$67,$03,$00
+  1437 47F0 FF FF FF FF FF FF + 	.byte $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$54,$54,$54,$54,$54,$54,$00
+  1438 					
+  1439 				;
+  1440 				; Charset data
+  1441 				;
+  1442 				; For: Text (Atari Basic-) text modes 12 and 13 
+  1443 				;
+  1444 				; They are not ordered :(
+  1445 				;
+  1446
+  1447 4800					org 18432														
+  1448 						
+  1449 4800			chset12
+  1450 4800 00 00 00 00 00 00 + :8		.byte 0																; Empty						//0
+  1451 4808 7F 7F 7F 1F 1F 07 +  		.byte 127,127,127,31,31,7,7,1										; Cloud tile 1, bottom left //1
+  1452 4810 FF 7D 14 00 00 00 + 		.byte 255,125,20,0,0,0,0,0											; Cloud tile bottom			//2
+  1453 4818 00 00 14 7D FF FF + 		.byte 0	,	0	,	20	,	125	,	255	,	255	,	255	,	255		; Cloud tile top			//3
+  1454 4820 FD FD F4 F4 D0 D0 + 		.byte 253	,	253	,	244	,	244	,	208	,	208	,	64	,	64  ; Cloud tile, bottom right	//4
+  1455 4828 FF FF FF FF FF FF + :8		.byte 255															; Cloud tile, solid block	//5
+  1456
+  1457 4830 55 55 55 55 55 55 + :8		.byte 85															; Solid black block			//6		
+  1458 4838 55 55 55 55 55 65 + 		.byte 85	,	85	,	85	,	85	,	85	,	101	,	166	,	170 ; Solid black block, bottom //7
+  1459
+  1460 4840 BB BB BB BB BB BB + :8		.byte 187													        ; Light green block 		//8
+  1461 4848 BA BA BA BA BA BA + 		.byte 186	,	186	,	186	,	186	,	186	,	186	,	186	,	186	; Not so light green block  //9
+  1462 4850 AE AE AE AE AE AE + :8		.byte 174															; Solid green block			//10
+  1463 4858 AB AB AB AB AB AB + :8		.byte 171															; Solid green block			//11
+  1464 4860 40 40 40 40 40 40 + :8		.byte 64															; Flag pole 				//12
+  1465 4868 4C 7F 7F 7F 7F 7F + 	    .byte 76	,	127	,	127	,	127	,	127	,	127	,	127	,	76  ; Flag part 	1			//13
+  1466 4870 CF FF FC FC FC FC + 		.byte 207	,	255	,	252	,	252	,	252	,	252	,	255	,	207 ; Flag Part 	2			//14
+  1467 4878 55 55 41 41 41 55 + 		.byte 85	,	85	,	65	,	65	,	65	,	85	,	85	,	85  ; Building part with window //15
+  1468 					
+  1469 				;
+  1470 				; A poem
+  1471 				;
+  1472
+  1473 4880			poem
+  1474 4880 00 00 6F 68 00 68 + 	.byte "  oh have i surely.."
+  1475 4894 00 00 73 6C 69 70 + 	.byte "  slipped the bonds."
+  1476 48A8 00 00 6F 66 00 65 + 	.byte "  of earth and...   "
+  1477 48BC 00 00 64 61 6E 63 + 	.byte "  danced the skies.."
+  1478 48D0 00 00 6F 6E 00 6C + 	.byte "  on laughter       "
+  1479 48E4 00 00 73 69 6C 76 + 	.byte "  silvered wings    "
+  1480 48F8 00 00 73 75 6E 77 + 	.byte "  sunward i climbed "
+  1481 490C 00 00 61 6E 64 00 + 	.byte "  and joined the    "	
+  1482 4920 00 00 74 75 6D 62 + 	.byte "  tumbeling mirth of"
+  1483 4934 00 00 73 75 6E 00 + 	.byte "  sun splid clouds  "
+  1484 4948 00 00 61 6E 64 00 + 	.byte "  and done hundred  "
+  1485 495C 00 00 74 68 69 6E + 	.byte "  things you have   "
+  1486 4970 00 00 6E 6F 74 00 + 	.byte "  not dreamed of -- "
+  1487 4984 00 00 77 68 65 65 + 	.byte "  wheeled and soared"
+  1488 4998 00 00 61 6E 64 00 + 	.byte "  and swung high in "
+  1489 49AC 00 00 74 68 65 00 + 	.byte "  the sunlit silence"
+  1490 49C0 00 00 68 6F 76 07 + 	.byte "  hov'ring there    "
+  1491 49D4 00 00 69 00 63 68 + 	.byte "  i chased the      "
+  1492 49E8 00 00 73 6F 75 74 + 	.byte "  souting wind      "
+  1493 49FC 00 00 61 6C 6F 6E + 	.byte "  along and flung   "
+  1494 4A10 00 00 6D 79 00 65 + 	.byte "  my eager craft    "
+  1495 4A24 00 00 74 68 72 6F + 	.byte "  throgh footless   "
+  1496 4A38 00 00 68 61 6C 6C + 	.byte "  halls of air.     "
+  1497 4A4C 00 00 75 70 00 75 + 	.byte "  up up the long    "
+  1498 4A60 00 00 64 65 6C 69 + 	.byte "  delirious burning "
+  1499 4A74 00 00 62 6C 75 65 + 	.byte "  blue........      "
+  1500 4A88 00 00 69 07 76 65 + 	.byte "  i've topped the   "
+  1501 4A9C 00 00 77 69 6E 64 + 	.byte "  windswept heights "
+  1502 4AB0 00 00 77 69 74 68 + 	.byte "  with easy grace   "
+  1503 4AC4 00 00 77 68 65 72 + 	.byte "  where never lark  "
+  1504 4AD8 00 00 6F 72 00 65 + 	.byte "  or even eagle flew"
+  1505 4AEC 00 00 61 6E 64 00 + 	.byte "  and while, with   "
+  1506 4B00 00 77 69 74 68 00 + 	.byte " with silent lifting"
+  1507 4B14 00 00 6D 69 6E 64 + 	.byte "  mind i've trod the"
+  1508 4B28 00 68 65 69 67 68 + 	.byte " heigh untresspassed"
+  1509 4B3C 00 00 63 61 6E 63 + 	.byte "  canctity of space "
+  1510 4B50 00 00 70 75 74 00 + 	.byte "  put out my hand   "
+  1511 4B64 00 00 61 6E 64 00 + 	.byte "  and touced the    "
+  1512 4B78 00 00 64 8B 66 61 + 	.byte "  d«face of god.    "    		
+  1513 											
+  1514 				;
+  1515 				; Screen- ram of playfield
+  1516 				;
   1517
-  1518
-  1519
-  1520
-  1521
-  1522
-  1523 					
-  1524 					
+  1518 4B8C			screen
+  1519 4B8C				org 32768
+  1520 					
+  1521 8000			screen2
+  1522 8000				org 40000
+  1523
+  1524
   1525
+  1526
+  1527
+  1528
+  1529
+  1530 					
+  1531 					
+  1532
