@@ -174,15 +174,15 @@ mads 1.9.3
    173 B035 A9 C0			lda #$C0
    174 B037 8D 0E D4			sta NMIEN
    175 					
-   176 B03A A9 00			lda #<dlgame	; Show playfield		
+   176 B03A A9 0E			lda #<dlgame	; Show playfield		
    177 B03C 8D 30 02			sta dlptr						
-   178 B03F A9 60			lda #>dlgame
+   178 B03F A9 38			lda #>dlgame
    179 B041 8D 31 02			sta dlptr+1
    180 					
-   181 B044 A9 5D			lda #<message	; Show message below score, just for fun
-   182 B046 8D 07 60			sta msg+1
-   183 B049 A9 60			lda #>message
-   184 B04B 8D 08 60			sta msg+2
+   181 B044 A9 6B			lda #<message	; Show message below score, just for fun
+   182 B046 8D 15 38			sta msg+1
+   183 B049 A9 38			lda #>message
+   184 B04B 8D 16 38			sta msg+2
    185 					
    186 B04E A9 80			lda #<poem		; Re- init zp8 with startin adress of
    187 B050 85 EE			sta zp8			; text containing our poem
@@ -251,9 +251,9 @@ mads 1.9.3
    250 B0B5 D0 EF			bne incsc		; Increase score!
    251
    252 B0B7 A5 EE			lda zp8
-   253 B0B9 8D 07 60			sta msg+1
+   253 B0B9 8D 15 38			sta msg+1
    254 B0BC A5 EF			lda zp8+1
-   255 B0BE 8D 08 60			sta msg+2
+   255 B0BE 8D 16 38			sta msg+2
    256 					
    257 B0C1 18				clc				; Display next line of poem
    258 B0C2 A5 EE			lda zp8
@@ -306,10 +306,10 @@ mads 1.9.3
    305 B102 A9 00			lda #0			; Silent!
    306 B104 8D 01 D2			sta $d201	
    307 B107			gover	
-   308 B107 A9 71			lda #<m1		; Inform the player that he has just died
-   309 B109 8D 07 60			sta msg+1		; (in case he won't belive)
-   310 B10C A9 60			lda #>m1
-   311 B10E 8D 08 60			sta msg+2
+   308 B107 A9 7F			lda #<m1		; Inform the player that he has just died
+   309 B109 8D 15 38			sta msg+1		; (in case he won't belive)
+   310 B10C A9 38			lda #>m1
+   311 B10E 8D 16 38			sta msg+2
    312 B111			trig	
    313 B111 AD 84 02			lda	644			; Wait for trigger key
    314 B114 D0 FB			bne trig		; and, if pressed =>
@@ -367,9 +367,9 @@ mads 1.9.3
    366 B150 A9 14			lda #maxlin 	; We scroll 20 rows of our playfield
    367 B152 8D 19 B1			sta lines
    368 					
-   369 B155 A9 0B			lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
+   369 B155 A9 19			lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
    370 B157 85 E0			sta zp			; of line 0 of playfield (complicated? :-) Noooooooooo, just bad english :-(
-   371 B159 A9 60			lda #>(z0+1)
+   371 B159 A9 38			lda #>(z0+1)
    372 B15B 85 E1			sta zp+1
    373 B15D A0 00			ldy #0
    374 B15F			s1					
@@ -628,7 +628,7 @@ mads 1.9.3
    627
    628 B2B5			wheight
    629 B2B5 08 07 06 05 05 05 + 	.byte	8,7,6,5,5,5,5,5,5,4,4,4
-   630 B2C1 05 05 05 05 04 04 + 	.byte	5,5,5,5,4,4,4,4,4,4,4,4
+   630 B2C1 05 06 05 06 05 06 + 	.byte	5,6,5,6,5,6,5,6,5,6,5,6
    631 B2CD 08 08 08 08 08 08 + 	.byte   8,8,8,8,8,8,8,8,8,8,8,8
    632 B2D9 05 05 05 05 05 05 + 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
    633 B2E5 04 04 04 04 04 04 + 	.byte   4,4,4,4,4,4,4,4,4,4,4,4
@@ -638,7 +638,7 @@ mads 1.9.3
    637 B2F1			dist
    638 B2F1 0A 08 07 06 05 05 + 	.byte 	10,8,7,6,5,,5,5,5,5,5,5,5
    639 B2FD 05 05 05 04 04 04 + 	.byte	5,5,5,4,4,4,4,4,4,4,4,4,4
-   640 B30A 03 03 03 03 04 04 + 	.byte 	3,3,3,3,4,4,4,4,4,5,5,5,5
+   640 B30A 05 03 04 03 04 04 + 	.byte 	5,3,4,3,4,4,4,4,4,5,5,5,5
    641 B317 08 08 08 08 08 08 + 	.byte   8,8,8,8,8,8,8,8,8,8,8,8,9
    642 B324 06 06 06 06 06 06 + 	.byte   6,6,6,6,6,6,6,6,6,6,6,6,6
    643 					
@@ -706,10 +706,10 @@ mads 1.9.3
    705 B384			lll0
    706
    707 B384 B9 3C B3			lda adtab+1,y	; Get adress from table
-   708 B387 99 0B 60			sta z0+1,y		; Put it into lms of antic program => low byte
+   708 B387 99 19 38			sta z0+1,y		; Put it into lms of antic program => low byte
    709 B38A C8				iny
    710 B38B B9 3C B3			lda adtab+1,y	; Same for high byte
-   711 B38E 99 0B 60			sta z0+1,y
+   711 B38E 99 19 38			sta z0+1,y
    712 B391 C8				iny
    713 B392 C8				iny
    714 B393 CA				dex
@@ -1207,7 +1207,7 @@ mads 1.9.3
   1206 B620 A2 00			ldx #0
   1207 B622			ss
   1208 B622 BD E1 B5			lda points,x	; Output- loop
-  1209 B625 99 49 60			sta scorelin,y
+  1209 B625 99 57 38			sta scorelin,y
   1210 B628 E8				inx
   1211 B629 C8				iny
   1212 B62A E0 07			cpx #7
@@ -1246,7 +1246,7 @@ mads 1.9.3
   1245 B652			debug
   1246 B652 AE CE AF			ldx level
   1247 B655 BD 42 B6			lda fig,x
-  1248 B658 8D 49 60			sta scorelin
+  1248 B658 8D 57 38			sta scorelin
   1249 B65B 60				rts
   1250 					
   1251 				;
@@ -1324,44 +1324,44 @@ mads 1.9.3
   1323
   1324 = 00F6			bytes	equ 246							; Our playfield is 246 bytes wide
   1325 					
-  1326 B8E7					org 24576						; Should always start at a 4k boundary
-  1327 6000			dlgame						 	
-  1328 6000-6084> 70 F0			.byte 112,112+128					; Start of Antic programm for our playfield			
-  1329 6002 46 49 60			.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
-  1330 6005 70				.byte 112							; and other important messages.....
-  1331 6006			msg
-  1332 6006 46 5D 60			.byte $40+gr1,a(message)			; Message line, tell the player what's going on
+  1326 B8E7					org 14350						; Should always start at a 4k boundary
+  1327 380E			dlgame						 	
+  1328 380E-3892> 70 F0			.byte 112,112+128					; Start of Antic programm for our playfield			
+  1329 3810 46 57 38			.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
+  1330 3813 70				.byte 112							; and other important messages.....
+  1331 3814			msg
+  1332 3814 46 6B 38			.byte $40+gr1,a(message)			; Message line, tell the player what's going on
   1333
-  1334 6009 F0				.byte $70+128						; 8 empty lines, start display- list interrupt
+  1334 3817 F0				.byte $70+128						; 8 empty lines, start display- list interrupt
   1335 					
-  1336 600A 54 8C 4B		z0	.byte $40+gr12,a(screen)			; Playfield row 0
-  1337 600D 54 82 4C		z1	.byte $40+gr12,a(screen+1*bytes) 	
-  1338 6010 54 78 4D		z2	.byte $40+gr12,a(screen+2*bytes) 
-  1339 6013 54 6E 4E		z3	.byte $40+gr12,a(screen+3*bytes) 
-  1340 6016 54 64 4F		z4	.byte $40+gr12,a(screen+4*bytes)
-  1341 6019 54 5A 50		z5	.byte $40+gr12,a(screen+5*bytes)
-  1342 601C 54 50 51		z6	.byte $40+gr12,a(screen+6*bytes)
-  1343 601F 54 46 52		z7	.byte $40+gr12,a(screen+7*bytes)
-  1344 6022 54 3C 53		z8	.byte $40+gr12,a(screen+8*bytes)
-  1345 6025 54 32 54		z9	.byte $40+gr12,a(screen+9*bytes)
-  1346 6028 54 28 55		z10	.byte $40+gr12,a(screen+10*bytes)
-  1347 602B 54 1E 56		z11	.byte $40+gr12,a(screen+11*bytes)
-  1348 602E 54 14 57		z12	.byte $40+gr12,a(screen+12*bytes)
-  1349 6031 54 0A 58		z13	.byte $40+gr12,a(screen+13*bytes)
-  1350 6034 54 00 59		z14	.byte $40+gr12,a(screen+14*bytes)
-  1351 6037 54 F6 59		z15	.byte $40+gr12,a(screen+15*bytes)
-  1352 603A 54 EC 5A		z16	.byte $40+gr12,a(screen+16*bytes) 
-  1353 603D 54 E2 5B		z17	.byte $40+gr12,a(screen+17*bytes)
-  1354 6040 54 D8 5C		z18	.byte $40+gr12,a(screen+18*bytes)
-  1355 6043 54 CE 5D		z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
-  1356 6046 41 00 60			.byte $41,a(dlgame)				 	; End of display- list, start all over again....
+  1336 3818 54 8C 4B		z0	.byte $40+gr12,a(screen)			; Playfield row 0
+  1337 381B 54 82 4C		z1	.byte $40+gr12,a(screen+1*bytes) 	
+  1338 381E 54 78 4D		z2	.byte $40+gr12,a(screen+2*bytes) 
+  1339 3821 54 6E 4E		z3	.byte $40+gr12,a(screen+3*bytes) 
+  1340 3824 54 64 4F		z4	.byte $40+gr12,a(screen+4*bytes)
+  1341 3827 54 5A 50		z5	.byte $40+gr12,a(screen+5*bytes)
+  1342 382A 54 50 51		z6	.byte $40+gr12,a(screen+6*bytes)
+  1343 382D 54 46 52		z7	.byte $40+gr12,a(screen+7*bytes)
+  1344 3830 54 3C 53		z8	.byte $40+gr12,a(screen+8*bytes)
+  1345 3833 54 32 54		z9	.byte $40+gr12,a(screen+9*bytes)
+  1346 3836 54 28 55		z10	.byte $40+gr12,a(screen+10*bytes)
+  1347 3839 54 1E 56		z11	.byte $40+gr12,a(screen+11*bytes)
+  1348 383C 54 14 57		z12	.byte $40+gr12,a(screen+12*bytes)
+  1349 383F 54 0A 58		z13	.byte $40+gr12,a(screen+13*bytes)
+  1350 3842 54 00 59		z14	.byte $40+gr12,a(screen+14*bytes)
+  1351 3845 54 F6 59		z15	.byte $40+gr12,a(screen+15*bytes)
+  1352 3848 54 EC 5A		z16	.byte $40+gr12,a(screen+16*bytes) 
+  1353 384B 54 E2 5B		z17	.byte $40+gr12,a(screen+17*bytes)
+  1354 384E 54 D8 5C		z18	.byte $40+gr12,a(screen+18*bytes)
+  1355 3851 54 CE 5D		z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
+  1356 3854 41 0E 38			.byte $41,a(dlgame)				 	; End of display- list, start all over again....
   1357 					
-  1358 6049			scorelin								; Contents of screen ram for status display
-  1359 6049 00 73 63 6F 72 65 + 	.byte " score              "
-  1360 605D			message
-  1361 605D 00 26 2C 39 00 2C + 	.byte " FLY LITTLE BIRD..  "
-  1362 6071			m1
-  1363 6071 00 00 00 00 27 21 + 	.byte "    GAME OVER       "
+  1358 3857			scorelin								; Contents of screen ram for status display
+  1359 3857 00 73 63 6F 72 65 + 	.byte " score              "
+  1360 386B			message
+  1361 386B 00 26 2C 39 00 2C + 	.byte " FLY LITTLE BIRD..  "
+  1362 387F			m1
+  1363 387F 00 00 00 00 27 21 + 	.byte "    GAME OVER       "
   1364 					
   1365 				;
   1366 				; Charset data
@@ -1369,7 +1369,7 @@ mads 1.9.3
   1368 				; For: Text (Atari Basic-) text modes 0,1,2 
   1369 				;
   1370
-  1371 6085				 org 17408
+  1371 3893				 org $4400
   1372 4400			chset
   1373 4400-4B8B> 00 00 00 00 + 	.byte $00,$00,$00,$00,$00,$00,$00,$00
   1374 4408 02 02 02 02 02 02 + 	.byte $02,$02,$02,$02,$02,$02,$02,$02
@@ -1445,7 +1445,7 @@ mads 1.9.3
   1444 				; They are not ordered :(
   1445 				;
   1446
-  1447 4800					org 18432														
+  1447 4800					org $4800														
   1448 						
   1449 4800			chset12
   1450 4800 00 00 00 00 00 00 + :8		.byte 0																; Empty						//0
@@ -1517,17 +1517,14 @@ mads 1.9.3
   1516 				;
   1517
   1518 4B8C			screen
-  1519 4B8C				org 32768
-  1520 					
-  1521 8000			screen2
-  1522 8000				org 40000
+  1519 4B8C				org 1040
+  1520
+  1521
+  1522
   1523
   1524
   1525
   1526
-  1527
-  1528
+  1527 					
+  1528 					
   1529
-  1530 					
-  1531 					
-  1532

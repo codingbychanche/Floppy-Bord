@@ -5,8 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.5 // 29.10.2014 => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
-;						=> No Flickering anymor :-)
+; V1.0.2B // 14.09.2014 => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -99,7 +98,7 @@ CONSOL	EQU 53279
 ; Start
 ;
 
-	org 45000
+	org $afc8
 	
 	jmp titelscr
 kill
@@ -1015,9 +1014,8 @@ dli
 	
 	lda #>chset	; No! Electron beam is at line # below 38
 	sta $d409	; so we are still within our score display
-	lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 	
-	sta wsync
-	sta colpf0s					
+	lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 					
+	sta colpf0s						
 	lda #20 	; Change colors for lower case characters in (basic)mode 1,2 or 0
 	sta colpf1s
 	lda #116
@@ -1025,7 +1023,8 @@ dli
 	lda #155
 	sta colpf3s
 	lda #14		; Bright white for the background
-	sta colbaks 	; End of screen area for score display
+	sta wsync
+	sta colbaks ; Ende of screen area for score display
 
 dli1								
 	lda vcount	; Is electron beam at row # bigger than 38?
@@ -1036,22 +1035,15 @@ dli1
 	;
 	; Set chset for playfield and playfield colors
 	;
-								
+												
 	lda #>chset12 ; Electron beam has crossed row 38 that means
 	sta $d409	; we are in playfild area of our screen
-
+	lda #10		; Color for bit combination: 01
+	sta colpf0s										
 	lda #200	; Color for bit combination: 10
-	sta colpf1s									
-	sta wsync
-	
+	sta colpf1s
 	lda #14		; Color for bit combination: 11
 	sta colpf2s
-	sta wsync
-	
-	lda #10		; Color for bit combination: 01	
-	sta colpf0s									
-	sta wsync
-
 	lda #24		; Color for bit combination=color 5 bit combination 11 (reverse character)
 	clc			; The only object on screen with that color is our flag that marks
 	adc level	; the begining of the next level. We change that color every new
@@ -1269,13 +1261,14 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.5// 29.10.2014 "	
+	.byte "                   V 1.0.2B// 14.9.2014 "	
 ;	
 ; Antic program for our playfield
 ;
 
-	org 14360							; Should always start at a 4k boundary
+	org $3830							; Should always start at a 4k boundary
 
+	
 bytes	equ 246							; Our playfield is 249 bytes wide
 
 dlgame						 	
@@ -1472,7 +1465,7 @@ poem
 ;
 
 screen
-	org 4096
+	org $7530
 
 
 

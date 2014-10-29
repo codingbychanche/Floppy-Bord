@@ -1,8 +1,9 @@
 Floppy Bord
-Version 1.0.2B 
+Version 1.0.4B 
 
-RetroZock // 14.9.2014
+RetroZock // 20.9.2014
 www.retrozock.com
+retrozock@hotmail.com
 ===========================
 The famous bird returns, on your  Atari 8- Bit Computer
 100% 6502 Assembler :-)
@@ -14,9 +15,11 @@ License:
 I don't have the slightest clue yet. Which one should I use?
 For a start, please, follow these simple rules:
 
-- 	You can copy the binary's as often as you wish, but, always include this file 		(Readme.txt) with your copy.
+- 	You can copy the binary's as often as you wish, but, always include this file 		
+	(Readme.txt) with your copy.
 
--	You may change the source file and are encouraged to do so. But, please, document 	your changes and always leave the original authors name (RetroZock) on the title 	screen. 
+-	You may change the source file and are encouraged to do so. But, please, document 	
+	your changes and always leave the original authors name (RetroZock) on the title screen. 
 
 The home directory contains the following files and sub directories:
 ====================================================================

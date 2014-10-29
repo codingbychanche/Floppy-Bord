@@ -5,8 +5,7 @@
 ;
 ; BF 
 ;
-; V1.0.5 // 29.10.2014 => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
-;						=> No Flickering anymor :-)
+; V1.0.4B // 18.10.2014 
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -129,9 +128,9 @@ titelscr
 	sta dlptr+1
 
 	lda #>chset		; Activate char set for graphics 0,1,2
-	sta 756
+	sta $02f4
 	
-	lda #14			; Set colors for titel, backrground of (Atari Basic) mode 1 and 2 
+	lda #$0e		; Set colors for titel, backrground of (Atari Basic) mode 1 and 2 
 	sta colbak
 	lda #200		; Color for lower case characters (Atari Basic) mode 1 and 2
 	sta colpf1
@@ -208,6 +207,9 @@ wt
 	lda #184		; Number of bytes to be scrolled
 	sta blocks   	
 	
+	ldx #20			; 20 rows
+	ldy #0
+	
 	ldy #<scroll	;Scroll Routine: Immediate VBI
 	ldx #>scroll
 	lda #6
@@ -226,7 +228,7 @@ main
 	;
 	
 	jsr screeninit
-	
+
 	lda #0			; Message=> scroll playfield from start
 	sta seqend	
 	
@@ -309,7 +311,7 @@ gover
 	sta msg+2
 trig	
 	lda	644			; Wait for trigger key
-	bne trig		; and, if predded =>
+	bne trig		; and, if pressed =>
 	jmp titelscr	; show titel = > this game is over!	
 	
 ;
@@ -330,11 +332,23 @@ xr	.byte 0			; Save place for our registers
 yr	.byte 0
 a	.byte 0
 
+rst	.byte
+
 scroll
 	stx xr			; Save registers
 	sty yr
-	sta a		
+	sta a	
+	
+	lda rst
+	bne s11
+	
+	;
+	; Reset Playfield= Begin scrolling at screen 1
+	; To do this, we change the screen- ram adresses in our display list
+	; line by line by replacing them with our in "adtab" saved adresses
+	; 
 s11
+	
 	lda clocks		; Fine Scroll?
 	beq hard		; No! Do hard scroll
 	dec clocks		; Do fine scroll	
@@ -349,7 +363,7 @@ hard
 	sta $d404		; after chracter was moved to it's leftmost position 
 	sta clocks		
 	
-	lda #20 		; We scroll 20 rows of our playfield
+	lda #maxlin 	; We scroll 20 rows of our playfield
 	sta lines
 	
 	lda #<(z0+1)	; Store adress of ram area where we have saved our adress for screen ram
@@ -383,7 +397,8 @@ s1
 
 lll01
 	lda #1			; Inform main that scroll sequence is done, start all over 
-	sta seqend		; and increase score					
+	sta seqend		; and increase score
+	sta rst					
 out	
 	ldx xr
 	ldy yr
@@ -420,7 +435,7 @@ pminit
 	lda #2
 	sta gractl
 
-	lda #%00111101
+	lda #%00000001	; Gprior= Bit 1=> Player overlap all playfield colors
 	sta 623
 	
 	;
@@ -436,9 +451,13 @@ plo1
 	dex
 	bne plo1
 	
+	lda #1
+	sta $d009
+	lda #1
+	sta $d00a
 	lda #40
 	sta hposp1
-	lda #208
+	lda #200
 	sta hposp2
 	
 	lda #0
@@ -607,20 +626,20 @@ cl1
 	; Height of window in pilar, first value is for level 1, second value for....
 
 wheight
-	.byte	7,6,5,4,7,7,7,7,7,7,7,7
-	.byte	7,6,5,7,7,7,7,7,7,7,7,7
-	.byte   5,5,5,5,5,5,4,5,5,5,6,6
+	.byte	8,7,6,5,5,5,5,5,5,4,4,4
+	.byte	5,6,5,6,5,6,5,6,5,6,5,6
+	.byte   8,8,8,8,8,8,8,8,8,8,8,8
 	.byte   5,5,5,5,5,5,5,5,5,5,5,5
 	.byte   4,4,4,4,4,4,4,4,4,4,4,4
 	
 	; ......space between pillars. Same as above
 
 dist
-	.byte 	10,10,10,10,10,10,10,10,10
-	.byte	8,8,8,8,8,8,8,8,8,8,8,8
-	.byte 	8,8,8,8,8,8,8,8,8,8,8,8
-	.byte   8,8,8,8,8,8,8,8,8,8,8,8
-	.byte   10,10,10,10,10,10,10,10,10
+	.byte 	10,8,7,6,5,,5,5,5,5,5,5,5
+	.byte	5,5,5,4,4,4,4,4,4,4,4,4,4
+	.byte 	5,3,4,3,4,4,4,4,4,5,5,5,5
+	.byte   8,8,8,8,8,8,8,8,8,8,8,8,9
+	.byte   6,6,6,6,6,6,6,6,6,6,6,6,6
 	
 space	
 	.byte 8					; Space between pillars
@@ -638,6 +657,13 @@ wide
 length
 	.byte 0
 col
+	.byte 0
+	
+aa
+	.byte 0
+xx	
+	.byte 0
+yy	
 	.byte 0
 
 ; Adress table
@@ -667,22 +693,17 @@ adtab
 	.byte dummy,a(screen+19*bytes)	; Row 20
 
 screeninit	
+	
+	sta aa
+	stx xx
+	sty yy
 
-	;
-	; Reset Playfield= Begin scrolling at screen 1
-	; To do this, we change the screen- ram adresses in our display list
-	; line by line by replacing them with our in "adtab" saved adresses
-	; 
 
-	pha				; Save registers
-	txa
-	pha
-	tya
-	pha
-
-	ldx #20			; 20 rows
+	ldx #maxlin		; Max of rows/ screen
 	ldy #0
+
 lll0
+
 	lda adtab+1,y	; Get adress from table
 	sta z0+1,y		; Put it into lms of antic program => low byte
 	iny
@@ -691,12 +712,13 @@ lll0
 	iny
 	iny
 	dex
+	
 	bne lll0		; All rows done?
 
 	;
 	; Get number of pillars (obstacles) and height of window / pillar
 	;
-	
+
 	ldx level
 	lda wheight,x
 	sta window
@@ -729,7 +751,7 @@ cll2
 	cpx #60			; until we get to x- pos 60, that is where screen 2 starts (should be 40? :-)
 	bne cll2		; Next x- pos
 	iny				; Next row
-	cpy #21			; Until all 20 rows are done
+	cpy #maxlin		; Until all rows are done
 	bne cll1	
 	
 	;
@@ -786,7 +808,7 @@ ppp2
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #maxlin
 	bne ppp2	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -820,7 +842,7 @@ ppp22
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #maxlin
 	bne ppp22	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -886,7 +908,7 @@ pp2
 	lda col		; Color
 	jsr plot	; Plot it
 	iny			; until we reach bottom of playfield
-	cpy #20
+	cpy #maxlin
 	bne pp2	
 	inx			; Repeat  
 	inc col     ; Next color
@@ -937,12 +959,10 @@ pp03
 	cpx #188	; All pilars? That is the case when
 	bcc gety	; xpos> 188?
 	
-	pla			; Get registers back
-	tay
-	pla
-	tax
-	pla
-	
+	lda aa
+	ldx xx
+	ldy yy
+
 	rts			; Return
 
 ;
@@ -959,10 +979,34 @@ pp03
 zeichen	.byte 0
 xr4		.byte 0
 yr4		.byte 0
+aa4		.byte 0
+
+adtab2
+	.byte a(screen)			
+	.byte a(screen+1*bytes)	
+	.byte a(screen+2*bytes)	
+	.byte a(screen+3*bytes)	
+	.byte a(screen+4*bytes)	
+	.byte a(screen+5*bytes)	
+	.byte a(screen+6*bytes)
+	.byte a(screen+7*bytes)
+	.byte a(screen+8*bytes)
+	.byte a(screen+9*bytes)
+	.byte a(screen+10*bytes)
+	.byte a(screen+11*bytes)
+	.byte a(screen+12*bytes)
+	.byte a(screen+13*bytes)
+	.byte a(screen+14*bytes)
+	.byte a(screen+15*bytes)
+	.byte a(screen+16*bytes)
+	.byte a(screen+17*bytes)
+	.byte a(screen+18*bytes)
+	.byte a(screen+19*bytes)	; Row 20
 
 plot	
 	stx xr4		; Save registers
 	sty yr4
+	sta aa4
 	
 	sta zeichen		; Save character
 	lda #<screen	; Init pointer at screen ram
@@ -972,16 +1016,15 @@ plot
 	
 	cpy #0		; ypos equals 0, that is easy, jump
 	beq set		; to our set- routine, we don't have to calcualte line- adress
-p1	
-	lda zp7		; Get pointer at screen ram
-	clc			; Now calculate adress of line from given y- pos
-	adc #bytes	; The slow way :-)
-	sta zp7				
-	lda zp7+1
-	adc #0
+	
+	tya
+	asl
+	tay
+	lda adtab2,y
+	sta zp7
+	iny
+	lda adtab2,y
 	sta zp7+1
-	dey
-	bne p1
 set
 	txa
 	tay
@@ -990,6 +1033,7 @@ set
 	
 	ldx xr4		; Get registers back
 	ldy yr4
+	lda aa4
 	
 	rts	
 	
@@ -1015,9 +1059,8 @@ dli
 	
 	lda #>chset	; No! Electron beam is at line # below 38
 	sta $d409	; so we are still within our score display
-	lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 	
-	sta wsync
-	sta colpf0s					
+	lda #5		; Change colors for capital charcters (basic-)mode 1 or 2 					
+	sta colpf0s						
 	lda #20 	; Change colors for lower case characters in (basic)mode 1,2 or 0
 	sta colpf1s
 	lda #116
@@ -1025,6 +1068,7 @@ dli
 	lda #155
 	sta colpf3s
 	lda #14		; Bright white for the background
+	sta wsync
 	sta colbaks 	; End of screen area for score display
 
 dli1								
@@ -1036,7 +1080,7 @@ dli1
 	;
 	; Set chset for playfield and playfield colors
 	;
-								
+
 	lda #>chset12 ; Electron beam has crossed row 38 that means
 	sta $d409	; we are in playfild area of our screen
 
@@ -1059,7 +1103,7 @@ dli1
 
 	; Draw sky
 
-	ldx #15		; Draw Background
+	ldx #15		; Draw Background 
 	lda #127	; Bright blue
 dd1
 	sta wsync	; Wait until scanline is finished
@@ -1077,18 +1121,21 @@ dd2
 	; Draw ground
 
 	ldx #15		; Draw ground
-	lda #194	; Start with dark green
+	lda #195	; Start with dark green
 dc1
 	sta wsync
 	sta colbaks
-	ldy #19
+	ldy #19		; Height of each color cycle
 dc2
-	dey			; Height of each color cycle
+	dey			
 	bne dc2
 	clc
 	adc #1
 	dex
 	bne dc1
+	
+	lda #0		; Lower border= black!
+	sta colbaks
 dlout
 	pla			; Get registers back
 	tay
@@ -1269,19 +1316,17 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.5// 29.10.2014 "	
+	.byte "                   V 1.0.4B// 17.10.2014"	
 ;	
 ; Antic program for our playfield
-;
+;  
 
-	org 14360							; Should always start at a 4k boundary
-
-bytes	equ 246							; Our playfield is 249 bytes wide
-
+bytes	equ 246							; Our playfield is 246 bytes wide
+	
+		org 14350						; Should always start at a 4k boundary
 dlgame						 	
-	.byte 112+128						; Start of Antic programm for our playfield			
-	.byte 112
-	.byte $40+gr1,a(scorelin)			; Gr.1 display. Tha's where we can see our score
+	.byte 112,112+128					; Start of Antic programm for our playfield			
+	.byte $40+gr1,a(scorelin)			; Gr.1 display. That's where we can see our score
 	.byte 112							; and other important messages.....
 msg
 	.byte $40+gr1,a(message)			; Message line, tell the player what's going on
@@ -1308,13 +1353,12 @@ z16	.byte $40+gr12,a(screen+16*bytes)
 z17	.byte $40+gr12,a(screen+17*bytes)
 z18	.byte $40+gr12,a(screen+18*bytes)
 z19	.byte $40+gr12,a(screen+19*bytes)	; Row 20
-
 	.byte $41,a(dlgame)				 	; End of display- list, start all over again....
 	
 scorelin								; Contents of screen ram for status display
-	.byte "score               "
+	.byte " score              "
 message
-	.byte "FLY LITTLE BIRD..   "
+	.byte " FLY LITTLE BIRD..  "
 m1
 	.byte "    GAME OVER       "
 	
@@ -1427,52 +1471,52 @@ chset12
 ;
 
 poem
-	.byte "oh have i surely...."
-	.byte "..slipped the bonds."
-	.byte "..of earth and...   "
-	.byte "danced the skies...."
-	.byte "on laughter silvered"
-	.byte "wings               "
-	.byte "sunward i climbed   "
-	.byte "and joined the      "	
-	.byte "tumbeling mirth     "
-	.byte "of sun splid clouds "
-	.byte "and done hundred    "
-	.byte "things you have not "
-	.byte "dreamed of --       "
-	.byte "wheeled and soared  "
-	.byte "and swung high in   "
-	.byte "the sunlit silence  "
-	.byte "hov'ring there      "
-	.byte "i chased the        "
-	.byte "souting wind        "
-	.byte "along and flung     "
-	.byte "my eager craft      "
-	.byte "throgh footless     "
-	.byte "halls of air.       "
-	.byte "up up the long      "
-	.byte "delirious burning   "
-	.byte "blue........        "
-	.byte "i've topped the     "
-	.byte "windswept heights   "
-	.byte "with easy grace     "
-	.byte "where never lark or "
-	.byte "even eagle flew.    "
-	.byte "and while, with     "
-	.byte "with silent lifting "
-	.byte "mind i've trod the  "
-	.byte "heigh untresspassed "
-	.byte "canctity of space   "
-	.byte "put out my hand and "
-	.byte "touced the d«face   "
-	.byte "of god.             "    		
+	.byte "  oh have i surely.."
+	.byte "  slipped the bonds."
+	.byte "  of earth and...   "
+	.byte "  danced the skies.."
+	.byte "  on laughter       "
+	.byte "  silvered wings    "
+	.byte "  sunward i climbed "
+	.byte "  and joined the    "	
+	.byte "  tumbeling mirth of"
+	.byte "  sun splid clouds  "
+	.byte "  and done hundred  "
+	.byte "  things you have   "
+	.byte "  not dreamed of -- "
+	.byte "  wheeled and soared"
+	.byte "  and swung high in "
+	.byte "  the sunlit silence"
+	.byte "  hov'ring there    "
+	.byte "  i chased the      "
+	.byte "  souting wind      "
+	.byte "  along and flung   "
+	.byte "  my eager craft    "
+	.byte "  throgh footless   "
+	.byte "  halls of air.     "
+	.byte "  up up the long    "
+	.byte "  delirious burning "
+	.byte "  blue........      "
+	.byte "  i've topped the   "
+	.byte "  windswept heights "
+	.byte "  with easy grace   "
+	.byte "  where never lark  "
+	.byte "  or even eagle flew"
+	.byte "  and while, with   "
+	.byte " with silent lifting"
+	.byte "  mind i've trod the"
+	.byte " heigh untresspassed"
+	.byte "  canctity of space "
+	.byte "  put out my hand   "
+	.byte "  and touced the    "
+	.byte "  d«face of god.    "    		
 							
 ;
 ; Screen- ram of playfield
 ;
 
 screen
-	org 4096
+	org 1040
 
 
 
