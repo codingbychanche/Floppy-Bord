@@ -5,8 +5,8 @@
 ;
 ; BF 
 ;
-; V1.0.5 // 29.10.2014 => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
-;						=> No Flickering anymor :-)
+; V1.0.6 // 15.11.2014  => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
+;						=> No Flickering anymore! :-)
 ; 
 ; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
 ;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
@@ -87,29 +87,29 @@ zp8		equ $ee
 
 ; Parameter
 
-maxlin	equ 20		; # of rows of playfield
-bytlin	equ 39		; byte/ row
-screens	equ 6		; playfield consists of 6 screens
+maxlin	equ $14		; # of rows of playfield
+bytlin	equ $27		; byte/ row
+screens	equ $06		; playfield consists of $06 screens
 
 ; Keyboard
 
-CONSOL	EQU 53279
+CONSOL	EQU $d01f
 
 ;
 ; Start
 ;
 
-	org 45000
+	org $afc8
 	
 	jmp titelscr
 kill
-	.byte 0			; Killflag. 1 means, player (bird) has died.....
+	.byte $00			; Killflag. $01 means, player (bird) has died.....
 wait
-	.byte 0			; Delay for srolling, the bigger, the slower
+	.byte $00			; Delay for srolling, the bigger, the slower
 seqend
-	.byte 0			; Flag. If this equals to 1, scroll sequence has ended...
+	.byte $00			; Flag. If this equals to $01, scroll sequence has ended...
 level
-	.byte 0			; Yes, it's a Level Counter
+	.byte $00			; Yes, it's a Level Counter
 ;
 ; Display Titel
 ;
@@ -1269,12 +1269,10 @@ titel
 	.byte "                                        "
 	.byte "                                        "
 	.byte "                                        "
-	.byte "                   V 1.0.5// 29.10.2014 "	
+	.byte "                   V 1.0.6// 15.11.2014 "	
 ;	
 ; Antic program for our playfield
 ;
-
-	org 14360							; Should always start at a 4k boundary
 
 bytes	equ 246							; Our playfield is 249 bytes wide
 
@@ -1470,9 +1468,8 @@ poem
 ;
 ; Screen- ram of playfield
 ;
-
-screen
-	org 4096
+			org 5000
+screen	.byte 0
 
 
 

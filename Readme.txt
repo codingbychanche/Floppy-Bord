@@ -1,7 +1,7 @@
 Floppy Bord
-Version 1.0.5
+Version 1.0.6
 
-RetroZock // 29.10.2014
+RetroZock // 15.11.2014
 www.retrozock.com
 ===========================
 The famous bird returns, on your  Atari 8- Bit Computer
