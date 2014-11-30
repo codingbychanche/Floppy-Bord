@@ -1,11 +1,12 @@
 Floppy Bord
+===========================
 Version 1.0.6
 
 RetroZock // 15.11.2014
 www.retrozock.com
-===========================
+
 The famous bird returns, on your  Atari 8- Bit Computer
-100% 6502 Assembler :-)
+100% 6502 Assembly :-)
 
 A small project to learn how horizontal fine scrolling can be done.
 
@@ -21,7 +22,7 @@ For a start, please, follow these simple rules:
 The home directory contains the following files and sub directories:
 ====================================================================
 
-- 	Readme.txt		
+- 	Readme.md		
 	That's what you are reading
 
 - 	Floppy_File.ATR			
