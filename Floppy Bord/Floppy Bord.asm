@@ -8,12 +8,6 @@
 ; V1.0.6 // 15.11.2014  => Changed adress space. Should now run with basic off, DOS+ DUP in RAM
 ;						=> No Flickering anymore! :-)
 ; 
-; Versioning: 	Digit 1=> when digit 2 becomes larger than 9, it is increased
-;				Digit 2=> Is increased, wehn visible changes are made (e.g.new graphics)
-;				Digit 3=> Is increased, wehn non visible changes are made (e.g. source code optimized)
-;
-; Style hint: 5 Tab's for inline comments!
-;
 
 ; ANTIC
 
@@ -196,9 +190,9 @@ wt
 	
 	lda #0			; Init frame- counter for bird animation
 	sta frame
-	ldy #<movebird	; Activate deffered VBI for player (bird) movement
+	ldy #<movebird	; Activate deferred VBI for player (bird) movement
 	ldx #>movebird				
-	lda #7
+	lda #7			;= Deferred VBI
 	jsr $e45c
 	
 	lda #2			; Delay for scrolling
@@ -210,7 +204,7 @@ wt
 	
 	ldy #<scroll	;Scroll Routine: Immediate VBI
 	ldx #>scroll
-	lda #6
+	lda #6			;= Immediate VBI
 	jsr $e45c
 	
 ;
