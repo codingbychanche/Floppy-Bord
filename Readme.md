@@ -5,7 +5,7 @@ Version 1.0.6
 RetroZock // 15.11.2014
 www.retrozock.com
 
-The famous bird returns, on your  Atari 8- Bit Computer
+The infamous bird returns, on your  Atari 8- bit computer
 100% 6502 Assembly :-)
 
 A small project to learn how horizontal fine scrolling can be done.
