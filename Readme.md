@@ -8,6 +8,8 @@ www.retrozock.com
 The infamous bird returns, on your  Atari 8- bit computer
 100% 6502 Assembly :-)
 
+![](ScreenShot.png)
+
 A small project to learn how horizontal fine scrolling can be done.
 
 License:
